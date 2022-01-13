@@ -44,16 +44,14 @@ public class ApiController {
         
         return jsonResponse;
     }
-}
-/*
-public class WayPoint{
+    public class WayPoint{
 
-    private String wayLong;
-    private String wayLati;
-
-    public WayPoint(String Long, String Lati){
-        this.wayLong = Long;
-        this.wayLati = Lati;
+        private String wayLong;
+        private String wayLati;
+    
+        public WayPoint(String Long, String Lati){
+            this.wayLong = Long;
+            this.wayLati = Lati;
+        }
     }
 }
-*/
