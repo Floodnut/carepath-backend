@@ -1,4 +1,4 @@
-package com.safe_route.safe;
+package com.safe_route.safe.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +10,9 @@ import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser; 
 import org.json.simple.parser.ParseException;
 
+import java.net.MalformedURLException;
+
+import com.safe_route.safe.service.OSRMRequestService;
 
 
 @RestController
@@ -22,27 +25,43 @@ public class ApiController {
 
     
     @GetMapping("safeRoute/findSafenode")
-    public String safeNode(
+    public String safeNode (
         @RequestParam(value = "srcLong")String srcLong,
         @RequestParam(value = "srcLati")String srcLati,
         @RequestParam(value = "dstLong")String dstLong,
         @RequestParam(value = "dstLati")String dstLati) {
         
-        JSONObject data = new JSONObject();
-        JSONObject res = new JSONObject();
+        OSRMRequestService route = new OSRMRequestService(srcLong, srcLati, dstLong, dstLati);
+        String response;
 
-        data.put("srcLong", srcLong);
-        data.put("srcLati", srcLati);
-        data.put("dstLong", dstLong);
-        data.put("dstLati", dstLati);
+        try{
+            response = route.osrmRequest();
+            JSONObject data = new JSONObject();
+            JSONObject res = new JSONObject();
+    
+            data.put("srcLong", srcLong);
+            data.put("srcLati", srcLati);
+            data.put("dstLong", dstLong);
+            data.put("dstLati", dstLati);
+    
+            res.put("response",data);
+            res.put("status","200");
+    
+            String jsonResponse = res.toJSONString();
+    
+    
+            return response;
 
-        res.put("response",data);
-        res.put("status","200");
-
-        String jsonResponse = res.toJSONString();
-
+        }catch(MalformedURLException e){
+            e.printStackTrace();
+            response = "{ \"status\" : \"error\" }";
+        }
         
-        return jsonResponse;
+
+
+
+
+        //return jsonResponse;
     }
     public class WayPoint{
 
