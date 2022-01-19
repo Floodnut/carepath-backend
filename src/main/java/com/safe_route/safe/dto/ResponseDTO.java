@@ -12,5 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class ResponseDTO<T>{
     private String error;
+    //private String datatype;
+    private int total;
     private List<T> data;
 }

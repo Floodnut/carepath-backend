@@ -14,12 +14,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 @Entity
-@Table(name = "cctvpos")
-public class CctvPosModel {
+@Table(name = "police_pos")
+public class PolicePosModel {
     @Id
     private int id;
-    private String localcode;
-    private int count;
+    private String police;
+    private String policesub;
+    private String policetype;
     private Double lati;
     private Double longti;
 }

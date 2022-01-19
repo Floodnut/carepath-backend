@@ -36,19 +36,22 @@ public class LocationController {
         @RequestParam(required = true) Double dstLong
     ){
         JSONObject res = new JSONObject();
+        String noLocal = new String();
+        noLocal = "nope";
 
-        CctvPosModel src = CCTVPosDTO.toEntity(1, srcLati, srcLong);
-        CctvPosModel dst = CCTVPosDTO.toEntity(1, dstLati, dstLong);
+        CctvPosModel src = CCTVPosDTO.toEntity(srcLati, srcLong);
+        CctvPosModel dst = CCTVPosDTO.toEntity(dstLati, dstLong);
 
 		List<CctvPosModel> entities = service.findCCTV(src, dst);
 
-
 		List<CCTVPosDTO> dtos = entities.stream().map(CCTVPosDTO::new).collect(Collectors.toList());
 
-		ResponseDTO<CCTVPosDTO> response = ResponseDTO.<CCTVPosDTO>builder().data(dtos).build();
+		ResponseDTO<CCTVPosDTO> response = ResponseDTO.<CCTVPosDTO>builder().
+                                            total(entities.size()).
+                                            data(dtos).
+                                            build();
 
 		return ResponseEntity.ok().body(response);
-
 
     }
 }

@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class CCTVPosDTO{
     private int count;
+    private String local_code;
     private Double lati;
     private Double longti;
 
@@ -25,11 +26,10 @@ public class CCTVPosDTO{
         this.longti = entity.getLongti();
     }
 
-    public static CctvPosModel toEntity(final int cnt, final Double _lati, final Double _longti){
+    public static CctvPosModel toEntity(final Double pLati, final Double pLongti){
         return CctvPosModel.builder()
-                .count(cnt)
-                .lati(_lati)
-                .longti(_longti)
+                .lati(pLati)
+                .longti(pLongti)
                 .build();
     }
 }
