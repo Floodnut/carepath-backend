@@ -55,13 +55,10 @@ public class ApiController {
         }catch(MalformedURLException e){
             e.printStackTrace();
             response = "{ \"status\" : \"error\" }";
+            return response;
         }
         
-
-
-
-
-        //return jsonResponse;
+        
     }
     public class WayPoint{
 
