@@ -27,7 +27,7 @@ import com.safe_route.safe.service.Routing;
 @RequestMapping("safe")
 public class LocationController {
 
-    private final static String APPKEY = "l7xx47ffd778fcc54f49baa6e2ea37859c5d";
+    private final static String APPKEY = "";
     @Autowired
     private LocationService service;
 
