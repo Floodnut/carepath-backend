@@ -27,7 +27,7 @@ import com.safe_route.safe.service.Routing;
 @RequestMapping("safe")
 public class LocationController {
 
-    private final static String APPKEY = "";
+    private final static String APPKEY = "l7xx47ffd778fcc54f49baa6e2ea37859c5d";
     @Autowired
     private LocationService service;
 
@@ -54,21 +54,19 @@ public class LocationController {
                                             total(entities.size()).
                                             data(dtos).
                                             build();
-        routing.pdRouting(srcLati, srcLong, dstLati, dstLong,"", APPKEY);
         
 		return ResponseEntity.ok().body(response);
     }
 
     @GetMapping("/routing")
     public String defaultRouting(
-        @RequestParam(required = true) Double srcLati,
-        @RequestParam(required = true) Double srcLong,
-        @RequestParam(required = true) Double dstLati,
-        @RequestParam(required = true) Double dstLong
+        @RequestParam(required = true) String srcLati,
+        @RequestParam(required = true) String srcLongti,
+        @RequestParam(required = true) String dstLati,
+        @RequestParam(required = true) String dstLongti
     ){
         Routing routing = new Routing();
 
-
-        return routing.pdRouting(srcLati, srcLong, dstLati, dstLong,"", APPKEY);
+        return routing.getRoutePoint(srcLati, srcLongti, dstLati, dstLongti,"");
     }
 }
