@@ -19,6 +19,7 @@ public class CctvPosModel {
     @Id
     private int id;
     private String localcode;
+    private String local;
     private int count;
     private Double lati;
     private Double longti;

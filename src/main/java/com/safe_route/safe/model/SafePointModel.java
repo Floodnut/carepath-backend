@@ -13,10 +13,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@Entity
 public class SafePointModel {
+    @Id
+    private int id;
     private String type;
     private String name;
     private Double lati;
     private Double longti;
+    private Double oriLati;
+    private Double oriLongti;
 }

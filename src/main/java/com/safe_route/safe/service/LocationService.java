@@ -19,7 +19,7 @@ public class LocationService {
     @Autowired
     private PolicePersistence policePersistence;
 
-    public List<CctvPosModel> findCCTV(CctvPosModel src, CctvPosModel dst){
+    public List<CctvPosModel> findCCTV2(CctvPosModel src, CctvPosModel dst){
 
         Double sLati;
         Double bLati;
@@ -41,20 +41,74 @@ public class LocationService {
             sLongti = src.getLongti();
         }
         
-        return cctvPersistence.findCctvPosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(sLati, sLongti, bLati, bLongti );
+        return cctvPersistence.findCctvPosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(sLati, sLongti, bLati, bLongti);
     }
 
-    /*public List<CctvPosModel> findNodeCCTV(String lati, String longi,int interval){
+    
+    public List<CctvPosModel> findCCTV(String srcLati, String srcLongti, String dstLati, String dstLongti){
 
-        Double w = 0.001;
-        //if(interval >=80 && interval <=120){ w = 0.001 }
+        Double srcDLati = Double.parseDouble(srcLati);
+        Double srcDLongti = Double.parseDouble(srcLongti);
+        Double dstDLati = Double.parseDouble(dstLati);
+        Double dstDLongti = Double.parseDouble(dstLati);
 
-        return cctvPersistence.findCctvPosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan((Double.parseDouble(lati) - w), (Double.parseDouble(longi) - w), (Double.parseDouble(lati) + w), (Double.parseDouble(longi) + w));
-    }*/
+        Double sLati;
+        Double bLati;
+        Double sLongti;
+        Double bLongti;
+
+        if(srcDLati > dstDLati){
+            bLati = srcDLati;
+            sLati = dstDLati;
+        } else{
+            bLati = dstDLati;
+            sLati = srcDLati;
+        }
+        if(srcDLongti > dstDLongti){
+            bLongti = srcDLongti;
+            sLongti = dstDLongti;
+        } else{
+            bLongti = dstDLongti;
+            sLongti = srcDLongti;
+        }
+        
+        return cctvPersistence.findCctvPosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(sLati, sLongti, bLati, bLongti);
+    }
+
+    public List<PolicePosModel> findPolice(String srcLati, String srcLongti, String dstLati, String dstLongti){
+
+        Double srcDLati = Double.parseDouble(srcLati);
+        Double srcDLongti = Double.parseDouble(srcLongti);
+        Double dstDLati = Double.parseDouble(dstLati);
+        Double dstDLongti = Double.parseDouble(dstLati);
+
+        Double sLati;
+        Double bLati;
+        Double sLongti;
+        Double bLongti;
+
+        if(srcDLati > dstDLati){
+            bLati = srcDLati;
+            sLati = dstDLati;
+        } else{
+            bLati = dstDLati;
+            sLati = srcDLati;
+        }
+        if(srcDLongti > dstDLongti){
+            bLongti = srcDLongti;
+            sLongti = dstDLongti;
+        } else{
+            bLongti = dstDLongti;
+            sLongti = srcDLongti;
+        }
+        
+        return policePersistence.findPolicePosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(sLati, sLongti, bLati, bLongti);
+    }
+
+
     public List<CctvPosModel> findNodeCCTV(Double lati, Double longi,int interval){
 
         Double w = 0.002;
-        //if(interval >=80 && interval <=120){ w = 0.001 }
 
         return cctvPersistence.findCctvPosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(lati - w, longi - w, lati + w, longi + w);
     }
@@ -62,10 +116,11 @@ public class LocationService {
     public List<PolicePosModel> findNodePolice(Double lati, Double longi,int interval){
 
         Double w = 0.002;
-        //if(interval >=80 && interval <=120){ w = 0.001 }
 
         return policePersistence.findPolicePosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(lati - w, longi - w, lati + w, longi + w);
     }
+        
+
     /*
     public List<SafePointModel> findTraffic(Double lati,Double longti){
 

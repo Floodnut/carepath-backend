@@ -16,11 +16,15 @@ import lombok.NoArgsConstructor;
 @Data
 public class CCTVPosDTO{
     private int count;
-    private String local_code;
+    private String localcode;
+    private String local;
     private Double lati;
     private Double longti;
 
     public CCTVPosDTO(final CctvPosModel entity){
+        this.count = entity.getCount();
+        this.localcode = entity.getLocalcode();
+        this.local = entity.getLocal();
         this.count = entity.getCount();
         this.lati = entity.getLati();
         this.longti = entity.getLongti();

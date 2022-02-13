@@ -23,7 +23,7 @@ public class ApiController {
         return "This is api page";
     }
 
-    
+    /*    
     @GetMapping("safeRoute/findSafenode")
     public String safeNode (
         @RequestParam(value = "srcLong")String srcLong,
@@ -69,5 +69,5 @@ public class ApiController {
             this.wayLong = Long;
             this.wayLati = Lati;
         }
-    }
+    }*/
 }
