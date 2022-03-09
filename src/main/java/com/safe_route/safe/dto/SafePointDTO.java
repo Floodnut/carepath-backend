@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 public class SafePointDTO {
-    private String type;
+    private int type;
     private String name;
     private Double lati;
     private Double longti;
@@ -29,7 +29,7 @@ public class SafePointDTO {
         this.oriLongti = entity.getOriLongti();
     }
 
-    public static SafePointModel toEntity(final String type,final String name,final Double pLati, final Double pLongti,final Double oriLati, final Double oriLongti){
+    public static SafePointModel toEntity(final int type,final String name,final Double pLati, final Double pLongti,final Double oriLati, final Double oriLongti){
         return SafePointModel.builder()
                 .type(type)
                 .name(name)

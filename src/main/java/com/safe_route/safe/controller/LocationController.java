@@ -24,10 +24,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.safe_route.safe.dto.SafePointDTO;
+import com.safe_route.safe.dto.SafePosDTO;
 import com.safe_route.safe.dto.CCTVPosDTO;
 import com.safe_route.safe.dto.PolicePosDTO;
 import com.safe_route.safe.dto.ResponseDTO;
 import com.safe_route.safe.model.SafePointModel;
+import com.safe_route.safe.model.SafePosModel;
 import com.safe_route.safe.model.CctvPosModel;
 import com.safe_route.safe.model.PolicePosModel;
 import com.safe_route.safe.service.LocationService;
@@ -42,34 +44,6 @@ public class LocationController {
 
     @Autowired
     private LocationService service;
-
-    /*
-    @GetMapping("/cctv")
-    public ResponseEntity<?> locationController(
-        @RequestParam(required = true) Double srcLati,
-        @RequestParam(required = true) Double srcLong,
-        @RequestParam(required = true) Double dstLati,
-        @RequestParam(required = true) Double dstLong
-    ){
-        JSONObject res = new JSONObject();
-        String noLocal = new String();
-        Routing routing = new Routing();
-        noLocal = "nope";
-
-        CctvPosModel src = CCTVPosDTO.toEntity(srcLati, srcLong);
-        CctvPosModel dst = CCTVPosDTO.toEntity(dstLati, dstLong);
-
-		List<CctvPosModel> entities = service.findCCTV(src, dst);
-
-		List<CCTVPosDTO> dtos = entities.stream().map(CCTVPosDTO::new).collect(Collectors.toList());
-
-		ResponseDTO<CCTVPosDTO> response = ResponseDTO.<CCTVPosDTO>builder().
-                                            total(entities.size()).
-                                            data(dtos).
-                                            build();
-        
-		return ResponseEntity.ok().body(response);
-    }*/
 
     @GetMapping("/routing")
     public ResponseEntity<?> defaultRouting(
@@ -89,8 +63,6 @@ public class LocationController {
             JSONObject j2 = (JSONObject) jsonObj.get("data");
             JSONArray jarr = (JSONArray) j2.get("validNode");
 
-            //List<CctvPosModel> cctvs = service.findCCTV(srcLati, srcLongti, dstLati, dstLongti);
-            //List<PolicePosModel> polices = service.findPolice(srcLati, srcLongti, dstLati, dstLongti);
             List<SafePointModel> safePoints = new ArrayList<SafePointModel>();
 
             for (int i = 0 ; i < jarr.size(); i++){
@@ -100,25 +72,21 @@ public class LocationController {
                 JSONObject j3 = (JSONObject) jarr.get(i);
                 Double lati = (Double)j3.get("la");
                 Double longi = (Double)j3.get("lo");
-                //LOG.info(lati.toString());
-                //LOG.info(longi.toString());
-                List<CctvPosModel> cctvs = service.findNodeCCTV(lati, longi, 100);
-                List<PolicePosModel> polices = service.findNodePolice(lati, longi, 100);
-                //int ss = cctvs.size();
-                if (cctvs.size() > 0){
-                    LOG.info(Integer.toString(ss));
-                    for(int j = 0 ; j < cctvs.size();j++){
-                        //LOG.info(Integer.toString(j));
-                        CctvPosModel tmp = new CctvPosModel();
-                        tmp = cctvs.get(j);
-                        long dis = getDistance(lati,longi,tmp.getLati(),tmp.getLongti());
+
+                List<SafePosModel> safes = service.findSafePos(lati, longi, 100);
+
+                if (safes.size() > 0){
+                    for(int j = 0 ; j < safes.size();j++){
+                        SafePosModel tmp = new SafePosModel();
+                        tmp = safes.get(j);
+                        long dis = getDistance(lati,longi,tmp.getLati(),tmp.getLongi());
                         if (max < dis){
                             max = dis;
                             maxidx = j;
                         }     
                     }
-                    CctvPosModel tmp2 = cctvs.get(maxidx);
-                    safePoints.add(SafePointDTO.toEntity("CCTV",tmp2.getLocal(),tmp2.getLati(),tmp2.getLongti(),lati,longi));
+                    SafePosModel tmp2 = safes.get(maxidx);
+                    safePoints.add(SafePointDTO.toEntity(tmp2.getType(),tmp2.getName(),tmp2.getLati(),tmp2.getLongi(),lati,longi));
                 }
             }
 

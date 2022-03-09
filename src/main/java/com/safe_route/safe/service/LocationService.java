@@ -5,8 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import com.safe_route.safe.persistence.CCTVPersistence;
 import com.safe_route.safe.persistence.PolicePersistence;
+import com.safe_route.safe.persistence.SafePersistence;
 import com.safe_route.safe.model.PolicePosModel;
 import com.safe_route.safe.model.CctvPosModel;
+import com.safe_route.safe.model.SafePosModel;
 
 import org.json.simple.*;
 
@@ -18,6 +20,9 @@ public class LocationService {
 
     @Autowired
     private PolicePersistence policePersistence;
+
+    @Autowired
+    private SafePersistence safePersistence;
 
     public List<CctvPosModel> findCCTV2(CctvPosModel src, CctvPosModel dst){
 
@@ -108,21 +113,23 @@ public class LocationService {
 
     public List<CctvPosModel> findNodeCCTV(Double lati, Double longi,int interval){
 
-        Double w = 0.002;
+        Double w = 0.001;
 
         return cctvPersistence.findCctvPosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(lati - w, longi - w, lati + w, longi + w);
     }
 
     public List<PolicePosModel> findNodePolice(Double lati, Double longi,int interval){
 
-        Double w = 0.002;
+        Double w = 0.001;
 
         return policePersistence.findPolicePosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(lati - w, longi - w, lati + w, longi + w);
     }
         
 
-    /*
-    public List<SafePointModel> findTraffic(Double lati,Double longti){
+    
+    public List<SafePosModel> findSafePos(Double lati, Double longi, int interval){
+        Double w = 0.001;
 
-    }*/
+        return safePersistence.findSafePosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(lati - w, longi - w, lati + w, longi + w);
+    }
 }
