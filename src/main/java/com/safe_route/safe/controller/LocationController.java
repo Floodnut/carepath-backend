@@ -57,14 +57,45 @@ public class LocationController {
             LOG.setLevel(Level.INFO);
             Routing routing = new Routing();
             JSONParser parser = new JSONParser();
+
+            /* API 요청 */
             String jsonStr = routing.getRoutePoint(srcLati, srcLongti, dstLati, dstLongti,"");
+            /* API 응답 파싱 */
             Object obj = parser.parse(jsonStr);
             JSONObject jsonObj = (JSONObject) obj;
             JSONObject j2 = (JSONObject) jsonObj.get("data");
             JSONArray jarr = (JSONArray) j2.get("validNode");
+            JSONObject trafficDataList = (JSONObject) j2.get("traffic");
+            JSONArray trafficData = (JSONArray) trafficDataList.get("trafficData");
 
+            /* CCTV, 경찰서, 보안등 */
             List<SafePointModel> safePoints = new ArrayList<SafePointModel>();
 
+            /* 교통량 */
+            List<SafePosModel> trafficSafes = new ArrayList<SafePosModel>();
+            for (int i = 0 ; i < trafficData.size();i++){
+                JSONObject coor = (JSONObject)trafficData.get(i);
+                JSONArray co = (JSONArray)coor.get("coor");
+                for(int j = 0 ; j < co.size(); j+=2 ){
+                    SafePosModel tmp = new SafePosModel();
+                    tmp.setType(3);
+                    long con = (long)coor.get("congestion");
+                    if (con == 2){
+                        tmp.setName("서행");
+                    }
+                    else if (con == 3){
+                        tmp.setName("정체");
+                    }
+                    else if (con == 4){
+                        tmp.setName("혼잡");
+                    }
+
+                    tmp.setLati((Double)co.get(j+1));
+                    tmp.setLongi((Double)co.get(j));
+                    trafficSafes.add(tmp);
+                }
+            }
+            /* 안전 노드 확인 */
             for (int i = 0 ; i < jarr.size(); i++){
                 long max = 0;
                 int maxidx = 0;
@@ -73,17 +104,19 @@ public class LocationController {
                 Double lati = (Double)j3.get("la");
                 Double longi = (Double)j3.get("lo");
 
+                /* 안전 노드, 교통 혼잡 지역 병합 */
                 List<SafePosModel> safes = service.findSafePos(lati, longi, 100);
+                safes.addAll(trafficSafes);
 
                 if (safes.size() > 0){
                     for(int j = 0 ; j < safes.size();j++){
                         SafePosModel tmp = new SafePosModel();
                         tmp = safes.get(j);
-                        long dis = getDistance(lati,longi,tmp.getLati(),tmp.getLongi());
+                        long dis = getDistance(lati, longi, tmp.getLati(), tmp.getLongi());
                         if (max < dis){
                             max = dis;
                             maxidx = j;
-                        }     
+                        } 
                     }
                     SafePosModel tmp2 = safes.get(maxidx);
                     safePoints.add(SafePointDTO.toEntity(tmp2.getType(),tmp2.getName(),tmp2.getLati(),tmp2.getLongi(),lati,longi));

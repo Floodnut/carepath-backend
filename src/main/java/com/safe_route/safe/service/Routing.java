@@ -20,9 +20,8 @@ public class Routing {
     public String getRoutePoint(String srcLati, String srcLongti, String dstLati, String dstLongti, String passList) {
         try{
             String URL = "http://127.0.0.1:9001/routing?srcLati=";
-            String param = srcLati + "&srcLongti="+ srcLongti + "&dstLati="+ dstLati+ "&dstLongti="+ dstLongti + "&passList=" + passList;
+            String param = srcLati + "&srcLongti="+ srcLongti + "&dstLati="+ dstLati+ "&dstLongti="+ dstLongti + "&passList=" + passList + "&zoom=16&congestion=4" ;
 
-            log.info(URL + param);
             URL url = new URL(URL+param);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
