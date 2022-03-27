@@ -17,10 +17,28 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class Routing {
     
-    public String getRoutePoint(String srcLati, String srcLongti, String dstLati, String dstLongti, String passList) {
+    public String getRoutePoint(String srcLati, String srcLongti, String dstLati, String dstLongti, String passList, String conge) {
         try{
+            String zm = new String();
+            String op = new String();
+            if (conge == "2"){ /* safeDegree 2 */
+                zm = "15";
+                op = "4";
+            }
+            else if (conge == "3"){ /* safeDegree 1 */
+                zm = "15";
+                op = "4";
+            }
+            else if (conge == "4"){ /* safeDegree 0 */
+                zm = "15";
+                op = "4";
+            }
+            else{
+                zm = "15";
+                op = "4";
+            }
             String URL = "http://127.0.0.1:9001/routing?srcLati=";
-            String param = srcLati + "&srcLongti="+ srcLongti + "&dstLati="+ dstLati+ "&dstLongti="+ dstLongti + "&passList=" + passList + "&zoom=16&congestion=4" ;
+            String param = srcLati + "&srcLongti="+ srcLongti + "&dstLati="+ dstLati+ "&dstLongti="+ dstLongti + "&passList=" + passList + "&zoom="+zm+"&congestion="+conge + "&sop=10";// + op ;
 
             URL url = new URL(URL+param);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
