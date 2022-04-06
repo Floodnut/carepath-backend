@@ -37,7 +37,7 @@ public class Routing {
                 zm = "15";
                 op = "4";
             }
-            String URL = "http://127.0.0.1:9001/routing?srcLati=";
+            String URL = "http://127.0.0.1:9002/routing?srcLati=";
             String param = srcLati + "&srcLongti="+ srcLongti + "&dstLati="+ dstLati+ "&dstLongti="+ dstLongti + "&passList=" + passList + "&zoom="+zm+"&congestion="+conge + "&sop=10";// + op ;
 
             URL url = new URL(URL+param);

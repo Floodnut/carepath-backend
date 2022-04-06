@@ -9,6 +9,6 @@ import com.safe_route.safe.model.SafePosModel;
 @Repository
 public interface SafePersistence extends JpaRepository<SafePosModel, String>{
     
-    @Query(value = "select * from safepos p where p.lati > ?1 and p.longi > ?2 and p.lati < ?3 and p.longi < ?4", nativeQuery = true)
+    @Query(value = "select * from safeposim p where p.lati > ?1 and p.longi > ?2 and p.lati < ?3 and p.longi < ?4", nativeQuery = true)
     List<SafePosModel> findSafePosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(Double sLati, Double sLongti, Double bLati, Double bLongti);
 }

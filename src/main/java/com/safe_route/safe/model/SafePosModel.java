@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 @Entity
-@Table(name = "safepos")
+@Table(name = "safeposim")
 public class SafePosModel {
     @Id
     private int id;
