@@ -23,6 +23,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.1'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'commons-io:commons-io:2.6'
+	implementation 'commons-collections:commons-collections:3.0'
+	
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'mysql:mysql-connector-java'

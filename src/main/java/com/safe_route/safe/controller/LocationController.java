@@ -15,6 +15,8 @@ import org.json.simple.parser.ParseException;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
 import java.io.FileReader;
 import java.io.IOException;
@@ -92,6 +94,11 @@ public class LocationController {
         @RequestParam(required = true) int safeDegree
     ){
         try{
+            Double sourceLati = Double.parseDouble(srcLati);
+            Double sourceLongi = Double.parseDouble(srcLongti);
+            Double destLati = Double.parseDouble(dstLati);
+            Double destLongi = Double.parseDouble(dstLongti);
+
             LOG.setLevel(Level.INFO);
             Routing routing = new Routing();
             JSONParser parser = new JSONParser();
@@ -112,15 +119,20 @@ public class LocationController {
             JSONObject j2 = (JSONObject) jsonObj.get("data");
             JSONArray jarr = (JSONArray) j2.get("validNode");
             JSONArray maxmin = (JSONArray) j2.get("maxmin");
+            JSONArray vNodeList = (JSONArray) j2.get("validNodeList");
+            int vPointer = 0; 
 
-            /* 테스트용 */
-            String rr = new String();
-            rr = "";
+            /*   테스트   */
+            String rr = "_";
+            /*          */
   
             /* CCTV, 경찰서, 보안등 / 교통량 */
             List<SafePointModel> safePoints = new ArrayList<SafePointModel>();
             List<TmapTrafficModel> tmapPoints = new ArrayList<TmapTrafficModel>();
             List<TrafficModel> trafficPoints = new ArrayList<TrafficModel>();
+
+            /* 범위 누적 지점 */
+            List<SafePosModel> pointSafes = new ArrayList<SafePosModel>();
 
             /* AStat List */
             List<AStar> aStarOpen = new ArrayList<AStar>();
@@ -129,104 +141,136 @@ public class LocationController {
             //aStarClosed.add();
             
             /* 안전 노드 확인 */
-            for (int i = 0 ; i < jarr.size(); i++){
+            LinkedHashSet<SafePosModel> wayPoints = new LinkedHashSet<SafePosModel>();
+            for (int i = 1 ; i < jarr.size(); i++){
                 long m = 150;
                 int maxidx = -1;
+                long vLimit = (long)vNodeList.get(vPointer);
+                Double lati = 0.0;
+                Double longi = 0.0;
+                Double lati_1 = 0.0;
+                Double longi_1 = 0.0;
                 JSONObject j3 = (JSONObject) jarr.get(i);
-                Double lati = (Double)j3.get("la");
-                Double longi = (Double)j3.get("lo");
+                JSONObject jBefore = (JSONObject) jarr.get(i-1);      
+
+                lati_1 = (Double)jBefore.get("la");
+                longi_1 = (Double)jBefore.get("lo");
+                lati = (Double)j3.get("la");
+                longi = (Double)j3.get("lo");
+                
 
                 /* 안전 노드, 교통 혼잡 지역*/
-                List<SafePosModel> safes = service.findSafePos(lati, longi, 100);
-                List<TmapTrafficModel> tmapSafes = service.findTmapTrafficPos(lati, longi);
-                List<TrafficModel> trafficSafes = service.findTrafficPos(lati, longi);
+                // List<SafePosModel> safes = service.findSafePos(lati, longi, 100);
+                // List<TmapTrafficModel> tmapSafes = service.findTmapTrafficPos(lati, longi);
+                // List<TrafficModel> trafficSafes = service.findTrafficPos(lati, longi);
+
+                List<SafePosModel> safes = service.findSafePosInArea(lati_1, longi_1, lati, longi);
+                List<TmapTrafficModel> tmapSafes = service.findTmapTrafficPosInArea(lati_1, longi_1, lati, longi);
+                List<TrafficModel> trafficSafes = service.findTrafficPosInArea(lati_1, longi_1, lati, longi);
 
                 if(tmapSafes.size() > 0){
                     for(int j = 0 ; j < tmapSafes.size();j++){
                         SafePosModel tmp = new SafePosModel();
-                        TmapTrafficModel tmap = new TmapTrafficModel();
-                        tmap = tmapSafes.get(j);
-
-                        int con = tmap.getCongestion();
-                        tmp.setType(3);
-                        if (con == 2){
-                            tmp.setName("서행");
+                        TmapTrafficModel tmap = tmapSafes.get(j);
+                        if(boundaryEquation(tmap.getLat(), tmap.getLon(), lati_1, longi_1, lati, longi)){
+                            int con = tmap.getCongestion();
+                            tmp.setType(3);
+                            if (con == 2){
+                                tmp.setName("서행");
+                            }
+                            else if (con == 3){
+                                tmp.setName("정체");
+                            }
+                            else if (con == 4){
+                                tmp.setName("혼잡");
+                            }
+                            tmp.setLati(tmap.getLat());
+                            tmp.setLongi(tmap.getLon());
+                            wayPoints.add(tmp);
                         }
-                        else if (con == 3){
-                            tmp.setName("정체");
-                        }
-                        else if (con == 4){
-                            tmp.setName("혼잡");
-                        }
-                        tmp.setLati(tmap.getLat());
-                        tmp.setLongi(tmap.getLon());
-                        safes.add(tmp);
                     }
                 }
 
                 if(trafficSafes.size() > 0){
                     for(int j = 0 ; j < trafficSafes.size();j++){
                         SafePosModel tmp = new SafePosModel();
-                        TrafficModel traff = new TrafficModel();
-                        traff = trafficSafes.get(j);
-                        int con = traff.getCongestion();
-
-                        tmp.setType(3);
-                        if (con == 2){
-                            tmp.setName("서행");
+                        TrafficModel traff = trafficSafes.get(j);
+                        if(boundaryEquation(traff.getLat(), traff.getLon(), lati_1, longi_1, lati, longi)){
+                            int con = traff.getCongestion();
+                            tmp.setType(3);
+                            if (con == 2){
+                                tmp.setName("서행");
+                            }
+                            else if (con == 3){
+                                tmp.setName("정체");
+                            }
+                            else if (con == 4){
+                                tmp.setName("혼잡");
+                            }
+                            tmp.setLati(traff.getLat());
+                            tmp.setLongi(traff.getLon());
+                            wayPoints.add(tmp);
                         }
-                        else if (con == 3){
-                            tmp.setName("정체");
-                        }
-                        else if (con == 4){
-                            tmp.setName("혼잡");
-                        }
-                        tmp.setLati(traff.getLat());
-                        tmp.setLongi(traff.getLon());
-                        safes.add(tmp);
                     }
                 }
-
-                if (safes.size() > 0){
+                
+                if (safes.size() > 0 ){
                     for(int j = 0 ; j < safes.size();j++){
-                        SafePosModel tmp = new SafePosModel();
-                        tmp = safes.get(j);
-                        long dis = getDistance(lati, longi, tmp.getLati(), tmp.getLongi());
-                        boolean validNode = isValid(tmp.getLati(), tmp.getLongi(), lati - 0.005, longi - 0.005, lati + 0.005, longi + 0.005);
-                        
-                        if (m > dis){
+                        SafePosModel tmp = safes.get(j);
+                        if(boundaryEquation(tmp.getLati(), tmp.getLongi(), lati_1, longi_1, lati, longi)){
+                            wayPoints.add(tmp);
+                        } 
+                    }
+                } 
+
+                if (i == vLimit || i == jarr.size() - 1 ){
+                    if (vPointer == vNodeList.size() - 1){
+                        vLimit = jarr.size() - 1;
+                    }
+                    else{
+                        vPointer += 1;
+                    }
+                    List<SafePosModel> list = wayPoints.stream().collect(Collectors.toList());
+                    for(int midx = 0 ; midx < list.size() ; midx++){
+                        SafePosModel tmp = list.get(midx);
+                        long dis = 0;
+                        dis = getDistance(lati, longi, tmp.getLati(), tmp.getLongi());
                             if(tmp.getType() == 2){
                                 m = dis;
-                                maxidx = j;
+                                maxidx = midx;
                             }
-                            else if(tmp.getType() == 3 && validNode){
+                            else if(tmp.getType() == 3){
                                 m = dis;
-                                maxidx = j;                                
+                                maxidx = midx;                                
                             }
                             else if(tmp.getType() == 1){
                                 m = dis;
-                                maxidx = j;                                
+                                maxidx = midx;                                
                             }
                             else if(tmp.getType() == 4){
                                 m = dis;
-                                maxidx = j;
+                                maxidx = midx;
+                            }
+                            else if(tmp.getType() == 5){
+                                m = dis;
+                                maxidx = midx;
                             }
                             else{
                                 continue;
                             }
-                        } 
                     }
                     if (maxidx != -1){
-                        SafePosModel tmp2 = safes.get(maxidx);
-                        rr += Double.toString(tmp2.getLongi()) +',' + Double.toString(tmp2.getLati()) +'_';
+                        SafePosModel tmp2 = list.get(maxidx);
+                        // rr += Double.toString(tmp2.getLongi()) +',' + Double.toString(tmp2.getLati()) +'_';
                         safePoints.add(SafePointDTO.toEntity(tmp2.getType(),tmp2.getName(),tmp2.getLati(),tmp2.getLongi(),lati,longi));
                         //aStarOpen.add();
-                    }
+                    } 
+                    wayPoints.clear();
                 }   
             }
 
             //aStartClosed.add();
-            safePoints.add(SafePointDTO.toEntity(0, rr,1.0,1.0,1.0,1.0));
+            //safePoints.add(SafePointDTO.toEntity(0, rr,1.0,1.0,1.0,1.0));
             List<SafePointDTO> dtos = safePoints.stream().map(SafePointDTO::new).collect(Collectors.toList());
             ResponseDTO<SafePointDTO> response = ResponseDTO.<SafePointDTO>builder().
                                                         total(safePoints.size()).
@@ -234,7 +278,9 @@ public class LocationController {
                                                         build();
 
             return ResponseEntity.ok().body(response);            
-        }catch(Exception e){
+        }
+        catch(Exception e){
+            //LOG.info(e.toString());
             return ResponseEntity.ok().body(e.toString());
         }
     }
@@ -261,5 +307,43 @@ public class LocationController {
         }else{
             return false;
         }
+    }
+
+    private boolean boundaryEquation(Double lati, Double longi, Double sLati, Double sLongi, Double bLati, Double bLongi){
+        if(sLongi == bLongi){
+            if (longi <= (sLongi + 0.01) && longi >= (sLongi - 0.01)){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        else if(sLati == bLati){
+            if (lati <= (sLati + 0.01) && lati >= (sLati - 0.01)){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        else{
+            Double stdSlope = (bLati - sLati) / (bLongi - sLongi);
+            Double polynomialLow = stdSlope * (longi - sLongi) - 0.01414 + sLati;
+            Double polynomialHigh = stdSlope * (longi - sLongi) + 0.01414 + sLati;
+            if( polynomialLow <= lati && polynomialHigh >= lati){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        // else if(stdSlope < 0){
+        //     if( (stdSlope * (longi) - 0.01414) <= lati && (stdSlope * (longi) + 0.01414) <= lati){
+        //         return true;
+        //     }
+        //     else{
+        //         return false;
+        //     }
+        // }
     }
 }
