@@ -30,7 +30,8 @@ import com.safe_route.safe.dto.SafePosDTO;
 import com.safe_route.safe.dto.TmapTrafficDTO;
 import com.safe_route.safe.dto.TrafficDTO;
 import com.safe_route.safe.dto.ResponseDTO;
-import com.safe_route.safe.dto.AStar;
+import com.safe_route.safe.function.FSet;
+import com.safe_route.safe.function.AStar;
 import com.safe_route.safe.model.SafePointModel;
 import com.safe_route.safe.model.SafePosModel;
 import com.safe_route.safe.model.TmapTrafficModel;
@@ -42,12 +43,22 @@ import com.safe_route.safe.service.Routing;
 @RequestMapping("safe")
 public class LocationController {
 
-    private String APPKEY = "";
     private final static Logger LOG = Logger.getGlobal();
+
+    /* 도로 폭에 따른 안전도 가중치 */
+    private static Double safeScale  = 1.0;
+    private static Double avenue    = 0.3882;
+    private static Double road      = 0.9071;
+    private static Double narrow    = 1.0;
+
+    /* AStar 경유지 탐색을 위한 집합 */
+    private LinkedHashSet<AStar> closed;
+    private LinkedHashSet<AStar> open;
 
     @Autowired
     private LocationService service;
 
+    /* 안전 노드 조회 */
     @GetMapping("/node")
     public ResponseEntity<?> findNode(
         @RequestParam(required = true) int mode,
@@ -85,6 +96,7 @@ public class LocationController {
         }
     }
 
+    /* 안전 경로 조회 */
     @GetMapping("/routing")
     public ResponseEntity<?> defaultRouting(
         @RequestParam(required = true) String srcLati,
@@ -98,6 +110,16 @@ public class LocationController {
             Double sourceLongi = Double.parseDouble(srcLongti);
             Double destLati = Double.parseDouble(dstLati);
             Double destLongi = Double.parseDouble(dstLongti);
+            
+            int parentIdx = 0;
+            int nodeIdx = 0;
+            AStar startNode = new AStar();
+            // startNode.setId(nodeIdx);
+            // startNode.setGScore(0);
+            // startNode.setHScore(0);
+            // startNode.setFScore(0);
+            // closed.add(startNode);
+
 
             LOG.setLevel(Level.INFO);
             Routing routing = new Routing();
@@ -124,7 +146,6 @@ public class LocationController {
 
             /*   테스트   */
             String rr = "_";
-            /*          */
   
             /* CCTV, 경찰서, 보안등 / 교통량 */
             List<SafePointModel> safePoints = new ArrayList<SafePointModel>();
@@ -133,12 +154,6 @@ public class LocationController {
 
             /* 범위 누적 지점 */
             List<SafePosModel> pointSafes = new ArrayList<SafePosModel>();
-
-            /* AStat List */
-            List<AStar> aStarOpen = new ArrayList<AStar>();
-            List<AStar> aStarClosed = new ArrayList<AStar>();
-            //AStar startNode = 
-            //aStarClosed.add();
             
             /* 안전 노드 확인 */
             LinkedHashSet<SafePosModel> wayPoints = new LinkedHashSet<SafePosModel>();
@@ -160,14 +175,11 @@ public class LocationController {
                 
 
                 /* 안전 노드, 교통 혼잡 지역*/
-                // List<SafePosModel> safes = service.findSafePos(lati, longi, 100);
-                // List<TmapTrafficModel> tmapSafes = service.findTmapTrafficPos(lati, longi);
-                // List<TrafficModel> trafficSafes = service.findTrafficPos(lati, longi);
-
                 List<SafePosModel> safes = service.findSafePosInArea(lati_1, longi_1, lati, longi);
                 List<TmapTrafficModel> tmapSafes = service.findTmapTrafficPosInArea(lati_1, longi_1, lati, longi);
                 List<TrafficModel> trafficSafes = service.findTrafficPosInArea(lati_1, longi_1, lati, longi);
 
+                /* 티맵 교통 정보 */
                 if(tmapSafes.size() > 0){
                     for(int j = 0 ; j < tmapSafes.size();j++){
                         SafePosModel tmp = new SafePosModel();
@@ -191,6 +203,7 @@ public class LocationController {
                     }
                 }
 
+                /* 국가교통정보센터 교통 정보 */
                 if(trafficSafes.size() > 0){
                     for(int j = 0 ; j < trafficSafes.size();j++){
                         SafePosModel tmp = new SafePosModel();
@@ -214,6 +227,7 @@ public class LocationController {
                     }
                 }
                 
+                /* CCTV, 보안등, 편의점, 경찰서 */
                 if (safes.size() > 0 ){
                     for(int j = 0 ; j < safes.size();j++){
                         SafePosModel tmp = safes.get(j);
@@ -223,6 +237,7 @@ public class LocationController {
                     }
                 } 
 
+                /* 경유지 선택 */
                 if (i == vLimit || i == jarr.size() - 1 ){
                     if (vPointer == vNodeList.size() - 1){
                         vLimit = jarr.size() - 1;
@@ -231,8 +246,16 @@ public class LocationController {
                         vPointer += 1;
                     }
                     List<SafePosModel> list = wayPoints.stream().collect(Collectors.toList());
+                    
                     for(int midx = 0 ; midx < list.size() ; midx++){
                         SafePosModel tmp = list.get(midx);
+                        //AStar pass = new AStar();
+                        // nodeIdx += 1;
+                        // pass.setId(nodeIdx);
+                        // pass.setGScore();
+                        // pass.setHScore();
+                        // pass.setParent();
+
                         long dis = 0;
                         dis = getDistance(lati, longi, tmp.getLati(), tmp.getLongi());
                             if(tmp.getType() == 2){
@@ -261,16 +284,13 @@ public class LocationController {
                     }
                     if (maxidx != -1){
                         SafePosModel tmp2 = list.get(maxidx);
-                        // rr += Double.toString(tmp2.getLongi()) +',' + Double.toString(tmp2.getLati()) +'_';
                         safePoints.add(SafePointDTO.toEntity(tmp2.getType(),tmp2.getName(),tmp2.getLati(),tmp2.getLongi(),lati,longi));
-                        //aStarOpen.add();
                     } 
                     wayPoints.clear();
                 }   
             }
 
-            //aStartClosed.add();
-            //safePoints.add(SafePointDTO.toEntity(0, rr,1.0,1.0,1.0,1.0));
+            /* 반환 형태로 변환 */
             List<SafePointDTO> dtos = safePoints.stream().map(SafePointDTO::new).collect(Collectors.toList());
             ResponseDTO<SafePointDTO> response = ResponseDTO.<SafePointDTO>builder().
                                                         total(safePoints.size()).
@@ -280,11 +300,11 @@ public class LocationController {
             return ResponseEntity.ok().body(response);            
         }
         catch(Exception e){
-            //LOG.info(e.toString());
             return ResponseEntity.ok().body(e.toString());
         }
     }
 
+    /* 정수 길이 구하기 */
     private long getDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
         int R = 6371000; // metres
         Double v1 = lat1 * Math.PI/180; // v, l in radians
@@ -300,6 +320,7 @@ public class LocationController {
         return Math.round(d);
     }
 
+    /* 유효 노드 판정 */
     private boolean isValid(Double lati, Double longi, Double sLati, Double sLongti, Double bLati, Double bLongti){
 
         if (lati >= sLati && lati <= bLati && longi >= sLongti && longi <= bLongti){
@@ -309,41 +330,32 @@ public class LocationController {
         }
     }
 
+    /* 방정식을 통해 유효한 후보 노드인지 판정 */
     private boolean boundaryEquation(Double lati, Double longi, Double sLati, Double sLongi, Double bLati, Double bLongi){
+        Double bound = 0.01414;
         if(sLongi == bLongi){
-            if (longi <= (sLongi + 0.01) && longi >= (sLongi - 0.01)){
+            if (longi <= (sLongi + bound ) && longi >= (sLongi - bound )){
                 return true;
-            }
-            else{
-                return false;
             }
         }
         else if(sLati == bLati){
-            if (lati <= (sLati + 0.01) && lati >= (sLati - 0.01)){
+            if (lati <= (sLati + bound) && lati >= (sLati - bound )){
                 return true;
-            }
-            else{
-                return false;
             }
         }
         else{
             Double stdSlope = (bLati - sLati) / (bLongi - sLongi);
-            Double polynomialLow = stdSlope * (longi - sLongi) - 0.01414 + sLati;
-            Double polynomialHigh = stdSlope * (longi - sLongi) + 0.01414 + sLati;
+            Double polynomialLow = stdSlope * (longi - sLongi) - bound + sLati;
+            Double polynomialHigh = stdSlope * (longi - sLongi) + bound  + sLati;
             if( polynomialLow <= lati && polynomialHigh >= lati){
                 return true;
-            }
-            else{
-                return false;
-            }
+            }  
         }
-        // else if(stdSlope < 0){
-        //     if( (stdSlope * (longi) - 0.01414) <= lati && (stdSlope * (longi) + 0.01414) <= lati){
-        //         return true;
-        //     }
-        //     else{
-        //         return false;
-        //     }
-        // }
+        return false;
     }
+
+    // /* AStar 알고리즘을 통해 유효 후보 노드 중 경유지 선택 */
+    // private List<SafePosModel> validNodeSelect(Double lati, Double longi, Double nxtLati, Double nxtLongi, Double dstLati, Double dstLongi, List<SafePosModel> nodeList){
+
+    // } 
 }

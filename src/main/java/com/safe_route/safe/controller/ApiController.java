@@ -5,7 +5,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.core.env.Environment;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.beans.factory.annotation.Value;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;  
@@ -20,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.awt.image.BufferedImage;
+import java.awt.Image;
 import javax.imageio.ImageIO;
 import java.net.URL;
 import java.net.URLConnection;
@@ -30,8 +35,15 @@ import com.safe_route.safe.middleware.SHA256;
 
 
 @RestController
-@RequestMapping("sms")
+@RequestMapping("api")
+@PropertySource("classpath:api.properties")
 public class ApiController {
+
+    @Autowired
+    Environment env;
+
+    @Value("${appkey}")
+    private String key;
     
     /* API Test */
     @GetMapping("api/")
@@ -40,41 +52,25 @@ public class ApiController {
     }
 
     /* 마중요청 문자 보내기 */
-    @GetMapping(value = "/pickup", produces = MediaType.IMAGE_JPEG_VALUE)
+    @GetMapping(value = "/sms", produces = MediaType.IMAGE_JPEG_VALUE)
     public @ResponseBody byte[] getPickUpLocation(
         @RequestParam(required = true) String lati, 
         @RequestParam(required = true) String longi) throws IOException {
-
-        String data = null;
         try{
-            SHA256 sha256 = new SHA256();
             SmsImageAPI sms = new SmsImageAPI();
+            SHA256 sha256 = new SHA256();
 
-            data = sms.getPickup(lati, longi);
-
-            // URL imageURL = new URL(data);
             
-            // URLConnection urlConnection = new URL(data).openConnection();
+            BufferedImage data = sms.getPickup(lati, longi, key);
+            BufferedImage bi = data;
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(bi, "png", baos);
+            return baos.toByteArray();
 
-            // urlConnection.addRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)");
-            // urlConnection.getInputStream();
-
-            // BufferedImage bi = ImageIO.read(imageURL);
-            // ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            // ImageIO.write(bi, "png", baos);
-            // return baos.toByteArray();
-            //System.out.println(data.toString());
-    
-            // String hash = sha256.encrypt(lati + longi);
-            
-            InputStream in = new ByteArrayInputStream(data.getBytes());
-            System.out.println(data);
-            return IOUtils.toByteArray(in);
-            
         }catch(Exception e){
             e.printStackTrace();
+            return null;
         }
-        return data.getBytes();
     }
 
     /* OSRM Backend Request */

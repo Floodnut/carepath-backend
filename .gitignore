@@ -41,6 +41,7 @@ out/
 
 # keys
 keys.json
+api.properties
 
 # DB
 *.sql
