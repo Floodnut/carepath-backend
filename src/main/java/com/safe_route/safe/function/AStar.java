@@ -22,8 +22,8 @@ public class AStar {
     private Double longi;   //   경도
 
     @Override
-    public void setGScore(){
-        this.gScore = this.parent.getGScore() +
+    public void setGScore(Double distance){
+        this.gScore = this.parent.getGScore() + distance;
     }
 
     @Override
