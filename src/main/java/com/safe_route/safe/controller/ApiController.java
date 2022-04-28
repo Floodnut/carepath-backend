@@ -52,7 +52,7 @@ public class ApiController {
     }
 
     /* 마중요청 문자 보내기 */
-    @GetMapping(value = "/sms", produces = MediaType.IMAGE_JPEG_VALUE)
+    @GetMapping(value = "/sms", produces = MediaType.IMAGE_PNG_VALUE)
     public @ResponseBody byte[] getPickUpLocation(
         @RequestParam(required = true) String lati, 
         @RequestParam(required = true) String longi) throws IOException {
@@ -60,9 +60,7 @@ public class ApiController {
             SmsImageAPI sms = new SmsImageAPI();
             SHA256 sha256 = new SHA256();
 
-            
-            BufferedImage data = sms.getPickup(lati, longi, key);
-            BufferedImage bi = data;
+            BufferedImage bi = sms.getPickup(lati, longi, key);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(bi, "png", baos);
             return baos.toByteArray();

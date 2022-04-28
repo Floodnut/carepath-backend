@@ -52,7 +52,6 @@ public class AccidentController {
                     zones = service.findAccident(lati, longi, lati2, longi2);
                 }
                 
-                System.out.println(zones);
                 List<AccidentDTO> dtos = zones.stream().map(AccidentDTO::new).collect(Collectors.toList());
                 ResponseDTO<AccidentDTO> response = ResponseDTO.<AccidentDTO>builder().
                                                             total(zones.size()).

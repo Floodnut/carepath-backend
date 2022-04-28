@@ -12,12 +12,41 @@ import lombok.NoArgsConstructor;
 public class AStar {
     private int id;
     private AStar parent;
-    private Double fScore; //   total Score = g + h
-    private Double gScore; //   시작노드 to 현재 노드 거리 (누적)
-    private Double hScore; //   휴리스틱 추정 값 : 현재노드 to 최종 목적지
-    private Double sScore; //   안전도
+    private Double fScore;  //   total Score = g + h + s
+    private Double gScore;  //   누적 거리
+    private Double hScore;  //   휴리스틱 추정 값 : 현재노드 to 최종 목적지
+    private Double sScore;  //   안전도
 
-    // public Double safeDegreeEquation(){
-        
-    // }
+    private int layer;
+    private Double lati;    //   위도
+    private Double longi;   //   경도
+
+    @Override
+    public void setGScore(){
+        this.gScore = this.parent.getGScore() +
+    }
+
+    @Override
+    public void setFScore(){
+        this.fScore = this.gScore + this.hScore + this.sScore;
+    }
+
+    @Override
+    public void setSScore(){
+        this.sScore = 0; 
+    }
+
+    @Override
+    public boolean equals(Object t){
+        if(t instanceof AStar){
+            return id == ((AStar)t).id;
+        } else {
+            return false;
+        }
+    }
+    
+    @Override
+    public int hashCode(){
+        return id;
+    }
 }

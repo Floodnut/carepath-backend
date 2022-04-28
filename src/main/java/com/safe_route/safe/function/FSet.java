@@ -18,8 +18,8 @@ import lombok.NoArgsConstructor;
 // @Data
 public class FSet {
 
-    /* 거리 정수로 구하기 */
-    private Double getDistance2Double(Double srcLati, Double srcLongi, Double dstLati, Double dstLongi ){
+    /* 거리 소수점까지 구하기 */
+    public Double getDistance2Double(Double srcLati, Double srcLongi, Double dstLati, Double dstLongi ){
         int r = 6371000; //미터
         Double s1 = srcLati * 3.1415/180; 
         Double s2 = dstLati * 3.1415/180;
@@ -31,8 +31,8 @@ public class FSet {
         return r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     } 
 
-    /* 거리 소숫점까지 구하기 */
-    private long getDistance2Long(Double lat1, Double lon1, Double lat2, Double lon2) {
+    /* 거리 정수로 구하기 */
+    public long getDistance2Long(Double lat1, Double lon1, Double lat2, Double lon2) {
         int R = 6371000; // 미터
         Double v1 = lat1 * Math.PI/180; 
         Double v2 = lat2 * Math.PI/180;
