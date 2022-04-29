@@ -15,6 +15,7 @@ import org.json.simple.parser.ParseException;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
@@ -30,14 +31,13 @@ import com.safe_route.safe.dto.SafePosDTO;
 import com.safe_route.safe.dto.TmapTrafficDTO;
 import com.safe_route.safe.dto.TrafficDTO;
 import com.safe_route.safe.dto.ResponseDTO;
-import com.safe_route.safe.function.FSet;
-import com.safe_route.safe.function.AStar;
+import com.safe_route.safe.dto.AStar;
 import com.safe_route.safe.model.SafePointModel;
 import com.safe_route.safe.model.SafePosModel;
 import com.safe_route.safe.model.TmapTrafficModel;
 import com.safe_route.safe.model.TrafficModel;
 import com.safe_route.safe.service.LocationService;
-import com.safe_route.safe.service.Routing;
+import com.safe_route.safe.api.Routing;
 
 @RestController
 @RequestMapping("safe")
@@ -112,25 +112,19 @@ public class LocationController {
         @RequestParam(required = true) int safeDegree
     ){
         try{
+            Routing routing = new Routing();
+            JSONParser parser = new JSONParser();
+            String jsonStr = new String();
+
             Double sourceLati = Double.parseDouble(srcLati);
             Double sourceLongi = Double.parseDouble(srcLongti);
             Double destLati = Double.parseDouble(dstLati);
             Double destLongi = Double.parseDouble(dstLongti);
-            
-            int parentIdx = 0;
-            int nodeIdx = 0;
-            AStar startNode = new AStar();
-            // startNode.setId(nodeIdx);
-            // startNode.setGScore(0);
-            // startNode.setHScore(0);
-            // startNode.setFScore(0);
-            // closed.add(startNode);
 
-
+            /*   테스트   */
+            String rr = "_";
             LOG.setLevel(Level.INFO);
-            Routing routing = new Routing();
-            JSONParser parser = new JSONParser();
-            String jsonStr = new String();
+
             /* API 요청 */
             if (safeDegree == 0){
                 jsonStr = routing.getRoutePoint(srcLati, srcLongti, dstLati, dstLongti,"","4");
@@ -141,6 +135,7 @@ public class LocationController {
             else if (safeDegree == 2){
                 jsonStr = routing.getRoutePoint(srcLati, srcLongti, dstLati, dstLongti,"","2");
             }
+            
             /* API 응답 파싱 */
             Object obj = parser.parse(jsonStr);
             JSONObject jsonObj = (JSONObject) obj;
@@ -148,11 +143,9 @@ public class LocationController {
             JSONArray jarr = (JSONArray) j2.get("validNode");
             JSONArray maxmin = (JSONArray) j2.get("maxmin");
             JSONArray vNodeList = (JSONArray) j2.get("validNodeList");
-            int vPointer = 0; 
+            int vPointer = 0;
+            int aStarLayer = 1;
 
-            /*   테스트   */
-            String rr = "_";
-  
             /* CCTV, 경찰서, 보안등 / 교통량 */
             List<SafePointModel> safePoints = new ArrayList<SafePointModel>();
             List<TmapTrafficModel> tmapPoints = new ArrayList<TmapTrafficModel>();
@@ -160,13 +153,12 @@ public class LocationController {
 
             /* 범위 누적 지점 */
             List<SafePosModel> pointSafes = new ArrayList<SafePosModel>();
-            
-            /* 경로 지정 */
-            LinkedList<AStar> totalNode = new LinkedList<AStar>();
-            List<int> layer = new ArrayList<int>();
-            layer.add(0);
 
             /* 안전 노드 확인 */
+            LinkedList<AStar> wayPointsList = new LinkedList<AStar>();
+            initAStar(sourceLati, sourceLongi, destLati, destLongi);
+            wayPointsList.add(srcNode);
+
             LinkedHashSet<SafePosModel> wayPoints = new LinkedHashSet<SafePosModel>();
             for (int i = 1 ; i < jarr.size(); i++){
                 long m = 150;
@@ -239,14 +231,14 @@ public class LocationController {
                 }
                 
                 /* CCTV, 보안등, 편의점, 경찰서 */
-                if (safes.size() > 0 ){
-                    for(int j = 0 ; j < safes.size();j++){
+                if(safes.size() > 0){
+                    for(int j = 0 ; j < safes.size() ; j++){
                         SafePosModel tmp = safes.get(j);
                         if(boundaryEquation(tmp.getLati(), tmp.getLongi(), lati_1, longi_1, lati, longi)){
                             wayPoints.add(tmp);
                         } 
                     }
-                } 
+                }
 
                 /* 경유지 선택 */
                 if (i == vLimit || i == jarr.size() - 1 ){
@@ -256,25 +248,48 @@ public class LocationController {
                     else{
                         vPointer += 1;
                     }
+
+                    /* LinkedHashSet -> List 변환 */
                     List<SafePosModel> list = wayPoints.stream().collect(Collectors.toList());
-
-                    /* AStar 알고리즘 작업 예정 */
-                    int maxidx = -1;
-                    for(int i = 0 ; i < list.size() ; i++){
                     
+                    /* AStar 알고리즘 작업 */
+                    for(int i2 = 0 ; i2 < list.size() ; i2++){
+                        AStar tmpNode = setAStarNode(list.get(i2), destLati, destLongi, aStarLayer);
+                        open.add(tmpNode);
                     }
-                    /* =================== */
 
-                    if (maxidx != -1){
-                        SafePosModel tmp2 = list.get(maxidx);
-                        safePoints.add(SafePointDTO.toEntity(tmp2.getType(),tmp2.getName(),tmp2.getLati(),tmp2.getLongi(),lati,longi));
-                    } 
+                    Iterator openIter = open.iterator();
+                    AStar toClosed = new AStar();
+                    Double toClosedFScore = Double.POSITIVE_INFINITY;
+                    
+                    while(openIter.hasNext()){
+                        AStar toClosedCandidate = (AStar)openIter.next();
+                        if(toClosedCandidate.getFScore() < toClosedFScore){
+                            toClosed = toClosedCandidate;
+                            toClosedFScore = toClosedCandidate.getFScore();
+                        }
+                    }
+                    open.remove(toClosed);
+                    closed.add(toClosed);
+
+                    if(list.size() > 0){
+                        aStarLayer += 1;
+                    }
+                    /* ================ */
+
                     wayPoints.clear();
                 }   
             }
 
+            Iterator closedIter = closed.iterator();
+            while(closedIter.hasNext()){
+                AStar closedNode = (AStar)closedIter.next();
+                safePoints.add(SafePointDTO.toEntity(closedNode.getType(),closedNode.getName(),closedNode.getLati(),closedNode.getLongi()));
+            }
+
             /* 반환 형태로 변환 */
             List<SafePointDTO> dtos = safePoints.stream().map(SafePointDTO::new).collect(Collectors.toList());
+            dtos.remove(0);
             ResponseDTO<SafePointDTO> response = ResponseDTO.<SafePointDTO>builder().
                                                         total(safePoints.size()).
                                                         data(dtos).
@@ -283,12 +298,13 @@ public class LocationController {
             return ResponseEntity.ok().body(response);            
         }
         catch(Exception e){
+            e.printStackTrace();
             return ResponseEntity.ok().body(e.toString());
         }
     }
 
-    /* 부동 소숫점 거리 구하기 */
-    public Double getDistance2Double(Double srcLati, Double srcLongi, Double dstLati, Double dstLongi ){
+    /* 좌표사이 거리 구하기 */
+    public Double getDistance(Double srcLati, Double srcLongi, Double dstLati, Double dstLongi){
         int r = 6371000; //미터
         Double s1 = srcLati * 3.1415/180; 
         Double s2 = dstLati * 3.1415/180;
@@ -299,22 +315,6 @@ public class LocationController {
         
         return r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     } 
-
-    /* 정수 거리 구하기 */
-    private long getDistance(Double lat1, Double lon1, Double lat2, Double lon2) {
-        int R = 6371000; // metres
-        Double v1 = lat1 * Math.PI/180; // v, l in radians
-        Double v2 = lat2 * Math.PI/180;
-        Double tv = (lat2-lat1) * Math.PI/180;
-        Double tl = (lon2-lon1) * Math.PI/180;
-        
-        Double a = Math.sin(tv/2) * Math.sin(tv/2) + Math.cos(v1) * Math.cos(v2) * Math.sin(tl/2) * Math.sin(tl/2);
-        Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-        Double d = R * c;
-    
-        return Math.round(d);
-    }
 
     /* 유효 노드 판정 */
     private boolean isValid(Double lati, Double longi, Double sLati, Double sLongti, Double bLati, Double bLongti){
@@ -350,27 +350,55 @@ public class LocationController {
         return false;
     }
 
+    /* AStar 초기화 */
     private void initAStar(Double srcLati, Double srcLongi, Double dstLati, Double dstLongi){
         this.open = new LinkedHashSet<AStar>();
         this.closed = new LinkedHashSet<AStar>();
         this.srcNode = new AStar();
-        this.dstNode = new AStar();
-        this.curNode = new AStar();
 
         srcNode.setId(0);
-        srcNode.setGScore(0);
-        srcNode.setHScore(0);
+        srcNode.setLayer(0);
+        srcNode.setLati(srcLati);
+        srcNode.setLongi(srcLongi);
+
+        srcNode.setGScore();
+        srcNode.setHScore(getDistance(srcLati, srcLongi, dstLati, dstLongi));
         srcNode.setSScore();
         srcNode.setFScore();
+        closed.add(srcNode);
+        
+        this.nodeId = 1;
+    }
 
-        dstNode.setId(1);
-        dstNode.setGScore(0);
-        dstNode.setHScore(0);
-        srcNode.setSScore();
-        dstNode.setFScore();
+    /* AStar 노드 추가 및 연결 */
+    private AStar setAStarNode(SafePosModel node, Double dstLati, Double dstLongi, int layer){
+        AStar tmpNode = new AStar();
+        int validParent = 0;
 
-        open.add(srcNode);
+        Object[] aStarArr = closed.toArray();
+        Double initFScore = ((AStar)aStarArr[0]).getFScore(); 
 
-        this.nodeId = 2;
+        for(int idx = 1; idx < closed.size() ; idx++){
+            /* 노드 Layer 비교 */
+            if( ((AStar)aStarArr[idx]).getLayer() == layer - 1 && ((AStar)aStarArr[idx]).getFScore() < initFScore){
+                initFScore = ((AStar)aStarArr[idx]).getFScore();
+                validParent = idx;
+            }
+        }
+        tmpNode.setId(this.nodeId);
+        tmpNode.setParent((AStar)aStarArr[validParent]);
+        tmpNode.setType(node.getType());
+        tmpNode.setName(node.getName());
+        tmpNode.setLati(node.getLati());
+        tmpNode.setLongi(node.getLongi());
+        tmpNode.setLayer(layer);
+        tmpNode.setGScore(getDistance(tmpNode.getParent().getLati(), tmpNode.getParent().getLongi(), node.getLati(), node.getLongi()));
+        tmpNode.setHScore(getDistance(node.getLati(), node.getLongi(), dstLati, dstLongi));
+        tmpNode.setSScore();
+        tmpNode.setFScore();
+        
+        this.nodeId += 1;
+
+        return tmpNode;
     }
 }

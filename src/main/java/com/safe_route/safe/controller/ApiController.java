@@ -29,7 +29,7 @@ import javax.imageio.ImageIO;
 import java.net.URL;
 import java.net.URLConnection;
 
-import com.safe_route.safe.service.OSRMRequestService;
+import com.safe_route.safe.api.OSRMRequest;
 import com.safe_route.safe.api.SmsImageAPI;
 import com.safe_route.safe.middleware.SHA256;
 
@@ -79,7 +79,7 @@ public class ApiController {
         @RequestParam(value = "dstLong")String dstLong,
         @RequestParam(value = "dstLati")String dstLati) {
         
-        OSRMRequestService route = new OSRMRequestService(srcLong, srcLati, dstLong, dstLati);
+        OSRMRequest route = new OSRMRequest(srcLong, srcLati, dstLong, dstLati);
         String response;
 
         try{
@@ -100,7 +100,7 @@ public class ApiController {
             return response;
 
         }catch(MalformedURLException e){
-            e.printStackTrace();
+            //e.printStackTrace();
             response = "{ \"status\" : \"error\" }";
             return response;
         } 

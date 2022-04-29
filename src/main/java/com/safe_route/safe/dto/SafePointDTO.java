@@ -39,4 +39,13 @@ public class SafePointDTO {
                 .oriLongti(oriLongti)
                 .build();
     }
+
+    public static SafePointModel toEntity(final int type,final String name,final Double pLati, final Double pLongti){
+        return SafePointModel.builder()
+                .type(type)
+                .name(name)
+                .lati(pLati)
+                .longti(pLongti)
+                .build();
+    }
 }

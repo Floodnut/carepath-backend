@@ -1,4 +1,4 @@
-package com.safe_route.safe.service;
+package com.safe_route.safe.api;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -14,7 +14,7 @@ import java.net.URLStreamHandler;
 
 @AllArgsConstructor
 @NoArgsConstructor
-public class OSRMRequestService {
+public class OSRMRequest {
     private static final String reqUrl = "http://127.0.0.1:5000/route/v1/driving/";
     /* concat example
         127.105399,37.3595704;127.108081,37.363186

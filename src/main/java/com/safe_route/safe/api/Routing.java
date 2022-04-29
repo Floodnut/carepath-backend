@@ -1,4 +1,4 @@
-package com.safe_route.safe.service;
+package com.safe_route.safe.api;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
