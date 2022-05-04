@@ -13,24 +13,30 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 public class SafePosDTO {
-    private int type;
-    private String name;
+    private int tp;
+    private String nm;
     private Double lati;
     private Double longi;
+    private String road;
+    private int roadtype;
 
     public SafePosDTO(final SafePosModel entity){
-        this.type = entity.getType();
-        this.name = entity.getName();
+        this.tp = entity.getTp();
+        this.nm = entity.getNm();
         this.lati = entity.getLati();
         this.longi = entity.getLongi();
+        this.road = entity.getRoad();
+        this.roadtype = entity.getRoadtype();
     }
 
-    public static SafePosModel toEntity(final int type,final String name,final Double pLati, final Double pLongti){
+    public static SafePosModel toEntity(final int type,final String name,final Double pLati, final Double pLongti, final String roadName, final int roadTypeValue){
         return SafePosModel.builder()
-                .type(type)
-                .name(name)
+                .tp(type)
+                .nm(name)
                 .lati(pLati)
                 .longi(pLongti)
+                .road(roadName)
+                .roadtype(roadTypeValue)
                 .build();
     }
 }

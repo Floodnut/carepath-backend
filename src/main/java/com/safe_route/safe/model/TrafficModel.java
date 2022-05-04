@@ -23,4 +23,6 @@ public class TrafficModel {
     private int congestion;
     private Double lat;
     private Double lon;
+    private String road;
+    private int roadtype;
 }

@@ -50,9 +50,7 @@ public class LocationController {
 
     /* 도로 폭에 따른 안전도 가중치 */
     private static Double safeScale = 1.0;
-    private static Double avenue    = 0.3882;
-    private static Double road      = 0.9071;
-    private static Double narrow    = 1.0;
+    private static Double[] roadSafety = {0.3882, 0.9071, 1.0}; //avenue, road, narrow 
 
     /* AStar 경유지 탐색을 위한 집합 */
     private LinkedHashSet<AStar> open;
@@ -161,9 +159,8 @@ public class LocationController {
             wayPointsList.add(srcNode);
 
             LinkedHashSet<SafePosModel> wayPoints = new LinkedHashSet<SafePosModel>();
-            for (int i = 1 ; i < jarr.size(); i++){
-                long m = 150;
-                int maxidx = -1;
+            for (int i = 1 ; i < jarr.size() - 1; i++){
+                
                 long vLimit = (long)vNodeList.get(vPointer);
                 Double lati = 0.0;
                 Double longi = 0.0;
@@ -177,6 +174,8 @@ public class LocationController {
                 lati = (Double)j3.get("la");
                 longi = (Double)j3.get("lo");
                 
+                if(i - 1 == 0)
+                    continue;
 
                 /* 안전 노드, 교통 혼잡 지역*/
                 List<SafePosModel> safes = service.findSafePosInArea(lati_1, longi_1, lati, longi);
@@ -190,16 +189,18 @@ public class LocationController {
                         TmapTrafficModel tmap = tmapSafes.get(j);
                         if(boundaryEquation(tmap.getLat(), tmap.getLon(), lati_1, longi_1, lati, longi)){
                             int con = tmap.getCongestion();
-                            tmp.setType(3);
+                            tmp.setTp(3);
                             if (con == 2){
-                                tmp.setName("서행");
+                                tmp.setNm("서행");
                             }
                             else if (con == 3){
-                                tmp.setName("정체");
+                                tmp.setNm("정체");
                             }
                             else if (con == 4){
-                                tmp.setName("혼잡");
+                                tmp.setNm("혼잡");
                             }
+                            tmp.setRoad(tmap.getRoad());
+                            tmp.setRoadtype(tmap.getRoadtype());
                             tmp.setLati(tmap.getLat());
                             tmp.setLongi(tmap.getLon());
                             wayPoints.add(tmp);
@@ -214,16 +215,18 @@ public class LocationController {
                         TrafficModel traff = trafficSafes.get(j);
                         if(boundaryEquation(traff.getLat(), traff.getLon(), lati_1, longi_1, lati, longi)){
                             int con = traff.getCongestion();
-                            tmp.setType(3);
+                            tmp.setTp(3);
                             if (con == 2){
-                                tmp.setName("서행");
+                                tmp.setNm("서행");
                             }
                             else if (con == 3){
-                                tmp.setName("정체");
+                                tmp.setNm("정체");
                             }
                             else if (con == 4){
-                                tmp.setName("혼잡");
+                                tmp.setNm("혼잡");
                             }
+                            tmp.setRoad(traff.getRoad());
+                            tmp.setRoadtype(traff.getRoadtype());
                             tmp.setLati(traff.getLat());
                             tmp.setLongi(traff.getLon());
                             wayPoints.add(tmp);
@@ -240,15 +243,9 @@ public class LocationController {
                         } 
                     }
                 }
-
+                
                 /* 경유지 선택 */
-                if (i == vLimit || i == jarr.size() - 1 ){
-                    if (vPointer == vNodeList.size() - 1){
-                        vLimit = jarr.size() - 1;
-                    }
-                    else{
-                        vPointer += 1;
-                    }
+                if (i+1 == vLimit){
 
                     /* LinkedHashSet -> List 변환 */
                     List<SafePosModel> list = wayPoints.stream().collect(Collectors.toList());
@@ -274,12 +271,13 @@ public class LocationController {
                     open.remove(toClosed);
                     closed.add(toClosed);
 
-
                     /* ================ */
                     if(wayPoints.size() > 0){
                         aStarLayer += 1;
                     }
                     wayPoints.clear();
+                    vPointer += (vPointer + 1 == vNodeList.size()) ? 0 : 1;
+                    vLimit = (long)vNodeList.get(vPointer);
                 }  
                 
 
@@ -288,9 +286,11 @@ public class LocationController {
             List<AStar> closedIter = closed.stream().collect(Collectors.toList());
             for(int closedIdx = 1 ; closedIdx < closedIter.size(); closedIdx++){
                 AStar closedNode = closedIter.get(closedIdx);
+                rr += Double.toString(closedNode.getLongi()) + "," + Double.toString(closedNode.getLati()) + "_";
                 safePoints.add(SafePointDTO.toEntity(closedNode.getType(),closedNode.getName(),closedNode.getLati(),closedNode.getLongi()));
             }
             
+            safePoints.add(SafePointDTO.toEntity(0,rr,0.0,0.0));
             /* 반환 형태로 변환 */
             List<SafePointDTO> dtos = safePoints.stream().map(SafePointDTO::new).collect(Collectors.toList());
 
@@ -390,22 +390,21 @@ public class LocationController {
 
         for(int idx = 1; idx < closed.size() ; idx++){
             /* 노드 Layer 비교 */
-            if( ((AStar)aStarArr[idx]).getLayer() == layer - 2 && ((AStar)aStarArr[idx]).getFScore() < initFScore){
+            if(((AStar)aStarArr[idx]).getLayer() == layer - 1 && ((AStar)aStarArr[idx]).getFScore() < initFScore){
                 initFScore = ((AStar)aStarArr[idx]).getFScore();
                 validParent = idx;
             }
         }
-
         tmpNode.setId(this.nodeId);
         tmpNode.setParent((AStar)aStarArr[validParent]);
-        tmpNode.setType(node.getType());
-        tmpNode.setName(node.getName());
+        tmpNode.setType(node.getTp());
+        tmpNode.setName(node.getNm());
         tmpNode.setLati(node.getLati());
         tmpNode.setLongi(node.getLongi());
         tmpNode.setLayer(layer);
         tmpNode.setGScore(getDistance(tmpNode.getParent().getLati(), tmpNode.getParent().getLongi(), node.getLati(), node.getLongi()));
         tmpNode.setHScore(getDistance(node.getLati(), node.getLongi(), dstLati, dstLongi));
-        tmpNode.setSScore();
+        tmpNode.setSScore(calcSScore(node.getRoadtype()));
         tmpNode.setFScore();
         
         this.nodeId += 1;
@@ -413,8 +412,13 @@ public class LocationController {
         return tmpNode;
     }
 
-
-    private Double calcSScore(){
-        return 0.0;
+    private Double calcSScore(int roadType){
+        try{
+            return roadSafety[roadType-1];
+        }
+        catch(Exception e){
+            return roadSafety[2];
+        }
+        
     }
 }

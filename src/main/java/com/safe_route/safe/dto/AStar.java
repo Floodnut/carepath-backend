@@ -83,8 +83,13 @@ public class AStar {
     }
 
     /* 노드 총 가중치 */
+    public void setSScore(Double roadSafety){
+        this.sScore = roadSafety; 
+    }
+
+    /* 노드 총 가중치 */
     public void setFScore(){
-        this.fScore = (this.gScore + this.hScore + this.sScore)/1000;
+        this.fScore = ((this.gScore + this.hScore) * this.sScore) / 10000;
     }
 
     /* 노드 좌표(경도) */

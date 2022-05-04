@@ -8,6 +8,6 @@ import com.safe_route.safe.model.TrafficModel;
 
 @Repository
 public interface TrafficRepository extends JpaRepository<TrafficModel, String>{
-    @Query(value = "select traffic.id as id, traffic.congestion as congestion, node.lat as lat, node.lon as lon from nodeim as node, traffic where (traffic.tnode = node.nodeid or traffic.fnode = node.nodeid) and (lat > ?1 and lon > ?2 and lat < ?3 and lon < ?4);", nativeQuery = true)
+    @Query(value = "select traffic.id as id, traffic.congestion as congestion, node.lat as lat, node.lon as lon, traffic.road as road, traffic.roadtype as roadtype from nodeim as node, traffic where (traffic.tnode = node.nodeid or traffic.fnode = node.nodeid) and (lat > ?1 and lon > ?2 and lat < ?3 and lon < ?4);", nativeQuery = true)
     List<TrafficModel> findTraffic(Double sLati, Double sLongti, Double bLati, Double bLongti);
 }

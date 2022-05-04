@@ -17,6 +17,8 @@ public class TmapTrafficDTO {
     private int congestion;
     private Double lat;
     private Double lon;
+    private String road;
+    private int roadtype;
 
     public TmapTrafficDTO(final TmapTrafficModel entity){
         this.congestion = entity.getCongestion();

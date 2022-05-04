@@ -8,6 +8,6 @@ import com.safe_route.safe.model.TmapTrafficModel;
 
 @Repository
 public interface TmapTrafficRepository extends JpaRepository<TmapTrafficModel, String>{
-    @Query(value = "select congestion, lat, lon from tmaptraffic p where p.lat > ?1 and p.lon > ?2 and p.lat < ?3 and p.lon < ?4", nativeQuery = true)
+    @Query(value = "select congestion, lat, lon, road, roadtype from tmaptraffic p where p.lat > ?1 and p.lon > ?2 and p.lat < ?3 and p.lon < ?4", nativeQuery = true)
     List<TmapTrafficModel> findTmapTrafficByLatGreaterThanAndLonGreaterThanAndLatLessThanAndLonLessThan(Double sLati, Double sLongti, Double bLati, Double bLongti);
 }

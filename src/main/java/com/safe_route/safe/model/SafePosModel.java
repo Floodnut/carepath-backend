@@ -18,8 +18,10 @@ import lombok.NoArgsConstructor;
 public class SafePosModel {
     @Id
     private int id;
-    private int type;
-    private String name;
+    private int tp;
+    private String nm;
     private Double lati;
     private Double longi;
+    private String road;
+    private int roadtype;
 }
