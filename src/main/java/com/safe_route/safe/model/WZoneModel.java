@@ -3,6 +3,9 @@ package com.safe_route.safe.model;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Column;
+
+import java.lang.Math;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,9 +26,14 @@ public class WZoneModel {
     private int type;
 
     private int roadtype;
-
+    
     @Column(name="nm")
     private String name;
+
     private Double lati;
-    private Double longi;    
+
+    private Double longi;
+    
+    private Double area;
+
 }

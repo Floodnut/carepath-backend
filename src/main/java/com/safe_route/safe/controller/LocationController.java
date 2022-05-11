@@ -31,11 +31,13 @@ import com.safe_route.safe.dto.SafePosDTO;
 import com.safe_route.safe.dto.TmapTrafficDTO;
 import com.safe_route.safe.dto.TrafficDTO;
 import com.safe_route.safe.dto.ResponseDTO;
+import com.safe_route.safe.dto.WZoneDTO;
 import com.safe_route.safe.dto.AStar;
 import com.safe_route.safe.model.SafePointModel;
 import com.safe_route.safe.model.SafePosModel;
 import com.safe_route.safe.model.TmapTrafficModel;
 import com.safe_route.safe.model.TrafficModel;
+import com.safe_route.safe.model.WZoneModel;
 import com.safe_route.safe.service.LocationService;
 import com.safe_route.safe.api.Routing;
 
@@ -49,8 +51,17 @@ public class LocationController {
     private final static Logger LOG = Logger.getGlobal();
 
     /* 도로 폭에 따른 안전도 가중치 */
+    private static Double geoBound = 0.01;
     private static Double safeScale = 1.0;
     private static Double[] roadSafety = {0.3882, 0.9071, 1.0}; //avenue, road, narrow 
+
+    /* 범죄율 정(+) 가중치 */
+    private static Double nlZone = 0.15567056743; //유흥업소
+    private static Double nlStdDen = 0.138; //유흥업소 밀도 기준
+
+    /* 범죄율 부(-) 가중치 */
+    private static Double apt = 1.0; //아파트 단지
+    private static Double schoolW = 1.0; //학교
 
     /* AStar 경유지 탐색을 위한 집합 */
     private LinkedHashSet<AStar> open;
@@ -94,7 +105,7 @@ public class LocationController {
                                                         build();
             return ResponseEntity.ok().body(response);  
         }catch(Exception e){
-            return ResponseEntity.ok().body(e.toString());
+            return ResponseEntity.ok().body("Invalid Data");
         }
     }
 
@@ -125,15 +136,7 @@ public class LocationController {
             LOG.setLevel(Level.INFO);
 
             /* API 요청 */
-            if (safeDegree == 0){
-                jsonStr = routing.getRoutePoint(srcLati, srcLongti, dstLati, dstLongti,"","4");
-            }
-            else if (safeDegree == 1){
-                jsonStr = routing.getRoutePoint(srcLati, srcLongti, dstLati, dstLongti,"","3");
-            }
-            else if (safeDegree == 2){
-                jsonStr = routing.getRoutePoint(srcLati, srcLongti, dstLati, dstLongti,"","2");
-            }
+            jsonStr = routing.getRoutePoint(srcLati, srcLongti, dstLati, dstLongti, safeDegree);
             
             /* API 응답 파싱 */
             Object obj = parser.parse(jsonStr);
@@ -189,15 +192,15 @@ public class LocationController {
                         TmapTrafficModel tmap = tmapSafes.get(j);
                         if(boundaryEquation(tmap.getLat(), tmap.getLon(), lati_1, longi_1, lati, longi)){
                             int con = tmap.getCongestion();
-                            tmp.setTp(3);
+                            tmp.setType(3);
                             if (con == 2){
-                                tmp.setNm("서행");
+                                tmp.setName("서행");
                             }
                             else if (con == 3){
-                                tmp.setNm("정체");
+                                tmp.setName("정체");
                             }
                             else if (con == 4){
-                                tmp.setNm("혼잡");
+                                tmp.setName("혼잡");
                             }
                             tmp.setRoad(tmap.getRoad());
                             tmp.setRoadtype(tmap.getRoadtype());
@@ -215,15 +218,15 @@ public class LocationController {
                         TrafficModel traff = trafficSafes.get(j);
                         if(boundaryEquation(traff.getLat(), traff.getLon(), lati_1, longi_1, lati, longi)){
                             int con = traff.getCongestion();
-                            tmp.setTp(3);
+                            tmp.setType(3);
                             if (con == 2){
-                                tmp.setNm("서행");
+                                tmp.setName("서행");
                             }
                             else if (con == 3){
-                                tmp.setNm("정체");
+                                tmp.setName("정체");
                             }
                             else if (con == 4){
-                                tmp.setNm("혼잡");
+                                tmp.setName("혼잡");
                             }
                             tmp.setRoad(traff.getRoad());
                             tmp.setRoadtype(traff.getRoadtype());
@@ -279,8 +282,6 @@ public class LocationController {
                     vPointer += (vPointer + 1 == vNodeList.size()) ? 0 : 1;
                     vLimit = (long)vNodeList.get(vPointer);
                 }  
-                
-
             }
 
             List<AStar> closedIter = closed.stream().collect(Collectors.toList());
@@ -303,7 +304,7 @@ public class LocationController {
         }
         catch(Exception e){
             e.printStackTrace();
-            return ResponseEntity.ok().body(e.toString());
+            return ResponseEntity.ok().body("Invalid Data");
         }
     }
 
@@ -389,22 +390,24 @@ public class LocationController {
         Double initFScore = Double.POSITIVE_INFINITY;
 
         for(int idx = 1; idx < closed.size() ; idx++){
+            AStar layerTmp = (AStar)aStarArr[idx];
             /* 노드 Layer 비교 */
-            if(((AStar)aStarArr[idx]).getLayer() == layer - 1 && ((AStar)aStarArr[idx]).getFScore() < initFScore){
-                initFScore = ((AStar)aStarArr[idx]).getFScore();
+            if(layerTmp.getLayer() == layer - 1 && layerTmp.getFScore() < initFScore && layerTmp.getFScore() > 0){
+                initFScore = layerTmp.getFScore();
                 validParent = idx;
             }
         }
+
         tmpNode.setId(this.nodeId);
         tmpNode.setParent((AStar)aStarArr[validParent]);
-        tmpNode.setType(node.getTp());
-        tmpNode.setName(node.getNm());
+        tmpNode.setType(node.getType());
+        tmpNode.setName(node.getName());
         tmpNode.setLati(node.getLati());
         tmpNode.setLongi(node.getLongi());
         tmpNode.setLayer(layer);
-        tmpNode.setGScore(getDistance(tmpNode.getParent().getLati(), tmpNode.getParent().getLongi(), node.getLati(), node.getLongi()));
+        tmpNode.setGScore(tmpNode.getParent().getGScore() + getDistance(tmpNode.getParent().getLati(), tmpNode.getParent().getLongi(), node.getLati(), node.getLongi()));
         tmpNode.setHScore(getDistance(node.getLati(), node.getLongi(), dstLati, dstLongi));
-        tmpNode.setSScore(calcSScore(node.getRoadtype()));
+        tmpNode.setSScore(calcSScore(node.getRoadtype(), node.getLati(), node.getLongi()));
         tmpNode.setFScore();
         
         this.nodeId += 1;
@@ -412,13 +415,16 @@ public class LocationController {
         return tmpNode;
     }
 
-    private Double calcSScore(int roadType){
+    private Double calcSScore(int roadType, Double lati, Double longi){
         try{
-            return roadSafety[roadType-1];
+            List<WZoneModel> wZones = service.findWZone(lati - geoBound , longi - geoBound, lati + geoBound, longi + geoBound);
+            Double wZoneDensity = wZones.stream().mapToDouble(WZoneModel::getArea).sum() / 40000;
+            Double wZoneSafety = (wZoneDensity > 1) ?  1 / nlStdDen : wZoneDensity / nlStdDen;
+
+            return roadSafety[roadType-1] + (wZoneSafety * nlZone);
         }
         catch(Exception e){
             return roadSafety[2];
         }
-        
     }
 }

@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class WZoneDTO {
     private int type;
     private String name;
+    private Double area;
     private Double lati;
     private Double longi;
     private String road;
@@ -23,15 +24,17 @@ public class WZoneDTO {
     public WZoneDTO(final WZoneModel entity){
         this.type = entity.getType();
         this.name = entity.getName();
+        this.area = entity.getArea();
         this.lati = entity.getLati();
         this.longi = entity.getLongi();
         this.roadtype = entity.getRoadtype();
     }
 
-    public static WZoneModel toEntity(final int type, final int roadTypeValue, final String name,final Double pLati, final Double pLongi){
+    public static WZoneModel toEntity(final int type, final int roadTypeValue, final Double areaValue,final String name,final Double pLati, final Double pLongi){
         return WZoneModel.builder()
                 .type(type)
                 .name(name)
+                .area(areaValue)
                 .lati(pLati)
                 .longi(pLongi)
                 .roadtype(roadTypeValue)

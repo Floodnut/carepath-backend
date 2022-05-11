@@ -48,7 +48,12 @@ public class ApiController {
     /* API Test */
     @GetMapping("api/")
     public String apiTest() {
-        return "This is api page";
+        try{
+            return "This is api page";
+        }
+        catch(Exception e){
+            return "Invalid data";
+        }
     }
 
     /* 마중요청 문자 보내기 */
@@ -66,7 +71,7 @@ public class ApiController {
             return baos.toByteArray();
 
         }catch(Exception e){
-            e.printStackTrace();
+            //e.printStackTrace();
             return null;
         }
     }
@@ -92,8 +97,8 @@ public class ApiController {
             data.put("dstLong", dstLong);
             data.put("dstLati", dstLati);
     
-            res.put("response",data);
-            res.put("status","200");
+            res.put("response", data);
+            res.put("status", "200");
     
             String jsonResponse = res.toJSONString();
     
@@ -101,8 +106,11 @@ public class ApiController {
 
         }catch(MalformedURLException e){
             //e.printStackTrace();
-            response = "{ \"status\" : \"error\" }";
-            return response;
+            return "{ \"status\" : \"error\" }";
+        } 
+        catch(Exception e){
+            //e.printStackTrace();
+            return "{ \"status\" : \"error\" }";
         } 
     }
 }
