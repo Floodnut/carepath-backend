@@ -64,7 +64,7 @@ public class AStar {
 
     /* 노드-목적지 간 휴리스틱 거리 가중치 */
     public void setHScore(Double _hScore){
-        this.hScore = _hScore;
+        this.hScore = 1.0 * _hScore;
     }
 
     /* 노드-목적지 간 휴리스틱 거리 가중치 */

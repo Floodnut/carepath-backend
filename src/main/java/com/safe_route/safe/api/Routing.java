@@ -25,12 +25,17 @@ public class Routing {
             if (safeDegree == 0){ /* safeDegree 0 */
                 zm = "15";
                 op = "10";
-                conge = "2";
+                conge = "3";
             }
-            else{ /* safeDegree 1 */
+            else if (safeDegree == 1){ /* safeDegree 1 */
                 zm = "15";
                 op = "4";
                 conge = "3";
+            }
+            else{ /* safeDegree 2 */
+                zm = "15";
+                op = "0";
+                conge = "2";
             }
             String URL = "http://127.0.0.1:9002/routing?srcLati=";
             String param = srcLati + "&srcLongti="+ srcLongti + "&dstLati="+ dstLati+ "&dstLongti="+ dstLongti + "&zoom="+zm+"&congestion="+conge + "&sop=" + op ;

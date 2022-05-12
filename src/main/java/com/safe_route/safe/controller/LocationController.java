@@ -51,7 +51,8 @@ public class LocationController {
     private final static Logger LOG = Logger.getGlobal();
 
     /* 도로 폭에 따른 안전도 가중치 */
-    private static Double geoBound = 0.01;
+    private static Double geoBound = 0.002;
+    private static Double bound = 0.01414;
     private static Double safeScale = 1.0;
     private static Double[] roadSafety = {0.3882, 0.9071, 1.0}; //avenue, road, narrow 
 
@@ -60,6 +61,7 @@ public class LocationController {
     private static Double nlStdDen = 0.138; //유흥업소 밀도 기준
 
     /* 범죄율 부(-) 가중치 */
+    private static Double[] nodeSafety = { }; //CCTV, 경찰관서, 교통량, 보안등, 편의점 
     private static Double apt = 1.0; //아파트 단지
     private static Double schoolW = 1.0; //학교
 
@@ -147,6 +149,7 @@ public class LocationController {
             JSONArray vNodeList = (JSONArray) j2.get("validNodeList");
             int vPointer = 0;
             int aStarLayer = 1;
+            int trafficId = 100000;
 
             /* CCTV, 경찰서, 보안등 / 교통량 */
             List<SafePointModel> safePoints = new ArrayList<SafePointModel>();
@@ -163,14 +166,16 @@ public class LocationController {
 
             LinkedHashSet<SafePosModel> wayPoints = new LinkedHashSet<SafePosModel>();
             for (int i = 1 ; i < jarr.size() - 1; i++){
-                
                 long vLimit = (long)vNodeList.get(vPointer);
                 Double lati = 0.0;
                 Double longi = 0.0;
                 Double lati_1 = 0.0;
                 Double longi_1 = 0.0;
                 JSONObject j3 = (JSONObject) jarr.get(i);
-                JSONObject jBefore = (JSONObject) jarr.get(i-1);      
+                JSONObject jBefore = (JSONObject) jarr.get(i-1);
+                Double lastLati = sourceLati;
+                Double lastLongi = sourceLongi;
+                int lastId = 0;    
 
                 lati_1 = (Double)jBefore.get("la");
                 longi_1 = (Double)jBefore.get("lo");
@@ -248,14 +253,15 @@ public class LocationController {
                 }
                 
                 /* 경유지 선택 */
-                if (i+1 == vLimit){
-
+                if (i == vLimit - 1){
+                    
                     /* LinkedHashSet -> List 변환 */
                     List<SafePosModel> list = wayPoints.stream().collect(Collectors.toList());
-                    
+
                     /* AStar 알고리즘 작업 */
                     for(int i2 = 0 ; i2 < list.size() ; i2++){
                         AStar tmpNode = setAStarNode(list.get(i2), destLati, destLongi, aStarLayer);
+
                         open.add(tmpNode);
                     }
 
@@ -265,34 +271,46 @@ public class LocationController {
                     
                     while(openIter.hasNext()){
                         AStar toClosedCandidate = (AStar)openIter.next();
+                        Double lastNodeDist = getDistance(toClosedCandidate.getLati(),toClosedCandidate.getLongi(),lastLati,lastLongi);
+
+                        if(lastNodeDist < 50 && lastNodeDist >= 0){
+                            continue;
+                        }
             
-                        if(toClosedCandidate.getLayer() == aStarLayer - 1 && toClosedCandidate.getFScore() < toClosedFScore){
+
+                        if(toClosedCandidate.getLayer() == aStarLayer && toClosedCandidate.getFScore() < toClosedFScore){
                             toClosed = toClosedCandidate;
                             toClosedFScore = toClosedCandidate.getFScore();
                         }
                     }
-                    open.remove(toClosed);
-                    closed.add(toClosed);
+                    if(open.size() > 0 && open.contains(toClosed)){
+                        open.remove(toClosed);
+                        lastLati = toClosed.getLati();
+                        lastLongi = toClosed.getLongi();
+                        closed.add(toClosed);
+                    }
 
                     /* ================ */
-                    if(wayPoints.size() > 0){
-                        aStarLayer += 1;
-                    }
-                    wayPoints.clear();
+                    aStarLayer += (wayPoints.size() > 0) ? 1 : 0;
                     vPointer += (vPointer + 1 == vNodeList.size()) ? 0 : 1;
                     vLimit = (long)vNodeList.get(vPointer);
+                    wayPoints.clear();
                 }  
             }
-
+            
             List<AStar> closedIter = closed.stream().collect(Collectors.toList());
             for(int closedIdx = 1 ; closedIdx < closedIter.size(); closedIdx++){
                 AStar closedNode = closedIter.get(closedIdx);
+
+                if((closedIter.get(closedIdx - 1)).getLayer() == closedNode.getLayer() && (closedIter.get(closedIdx - 1)).getFScore() > closedNode.getFScore()){
+                    safePoints.remove(closedIdx - 1);
+                }
                 rr += Double.toString(closedNode.getLongi()) + "," + Double.toString(closedNode.getLati()) + "_";
                 safePoints.add(SafePointDTO.toEntity(closedNode.getType(),closedNode.getName(),closedNode.getLati(),closedNode.getLongi()));
             }
             
-            safePoints.add(SafePointDTO.toEntity(0,rr,0.0,0.0));
-            /* 반환 형태로 변환 */
+            safePoints.add(SafePointDTO.toEntity(-1,rr,0.0,0.0));
+            /* 반환 형태로 변환 */ 
             List<SafePointDTO> dtos = safePoints.stream().map(SafePointDTO::new).collect(Collectors.toList());
 
             ResponseDTO<SafePointDTO> response = ResponseDTO.<SafePointDTO>builder().
@@ -316,9 +334,11 @@ public class LocationController {
         Double th1 = (dstLati - srcLati) * 3.1415/180;
         Double th2 =  (dstLongi - srcLongi) * 3.1415/180;
 
-        Double a = Math.sin(th1/2) * Math.sin(th1/2) + Math.cos(s1/2) * Math.cos(s2/2) + Math.sin(th2/2) * Math.sin(th2/2);
+        Double a = Math.sin(th1/2) * Math.sin(th1/2) + Math.cos(s1) * Math.cos(s2) * Math.sin(th2/2) * Math.sin(th2/2);
         
-        return r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        return r * c;
     } 
 
     /* 유효 노드 판정 */
@@ -333,7 +353,7 @@ public class LocationController {
 
     /* 방정식을 통해 유효한 후보 노드인지 판정 */
     private boolean boundaryEquation(Double lati, Double longi, Double sLati, Double sLongi, Double bLati, Double bLongi){
-        Double bound = 0.01414;
+        
         if(sLongi == bLongi){
             if (longi <= (sLongi + bound ) && longi >= (sLongi - bound )){
                 return true;
@@ -392,13 +412,13 @@ public class LocationController {
         for(int idx = 1; idx < closed.size() ; idx++){
             AStar layerTmp = (AStar)aStarArr[idx];
             /* 노드 Layer 비교 */
-            if(layerTmp.getLayer() == layer - 1 && layerTmp.getFScore() < initFScore && layerTmp.getFScore() > 0){
+            if(layerTmp.getLayer() == layer - 1){
                 initFScore = layerTmp.getFScore();
                 validParent = idx;
             }
         }
 
-        tmpNode.setId(this.nodeId);
+        tmpNode.setId((int)Math.round((node.getLati() + node.getLongi()) % 1 * 10000000));
         tmpNode.setParent((AStar)aStarArr[validParent]);
         tmpNode.setType(node.getType());
         tmpNode.setName(node.getName());
@@ -407,7 +427,7 @@ public class LocationController {
         tmpNode.setLayer(layer);
         tmpNode.setGScore(tmpNode.getParent().getGScore() + getDistance(tmpNode.getParent().getLati(), tmpNode.getParent().getLongi(), node.getLati(), node.getLongi()));
         tmpNode.setHScore(getDistance(node.getLati(), node.getLongi(), dstLati, dstLongi));
-        tmpNode.setSScore(calcSScore(node.getRoadtype(), node.getLati(), node.getLongi()));
+        tmpNode.setSScore(calcSScore(node.getRoadtype(), node.getType(), node.getLati(), node.getLongi()));
         tmpNode.setFScore();
         
         this.nodeId += 1;
@@ -415,8 +435,10 @@ public class LocationController {
         return tmpNode;
     }
 
-    private Double calcSScore(int roadType, Double lati, Double longi){
+    private Double calcSScore(int roadType, int nodeType, Double lati, Double longi){
         try{
+
+            Double safetyRate = 1.0;
             List<WZoneModel> wZones = service.findWZone(lati - geoBound , longi - geoBound, lati + geoBound, longi + geoBound);
             Double wZoneDensity = wZones.stream().mapToDouble(WZoneModel::getArea).sum() / 40000;
             Double wZoneSafety = (wZoneDensity > 1) ?  1 / nlStdDen : wZoneDensity / nlStdDen;
