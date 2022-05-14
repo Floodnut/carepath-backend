@@ -59,7 +59,7 @@ public class AccidentController {
                                                             build();
                 return ResponseEntity.ok().body(response);  
             }catch(Exception e){
-                return ResponseEntity.ok().body("{\"status\" : \"error\" }");
+                return ResponseEntity.badRequest().body("{\"status\" : \"error\" }");
             }
         }
     

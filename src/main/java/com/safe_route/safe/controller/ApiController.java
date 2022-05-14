@@ -32,6 +32,7 @@ import java.net.URLConnection;
 import com.safe_route.safe.api.OSRMRequest;
 import com.safe_route.safe.api.SmsImageAPI;
 import com.safe_route.safe.middleware.SHA256;
+import com.safe_route.safe.service.SMSRedisService;
 
 
 @RestController
@@ -41,6 +42,11 @@ public class ApiController {
 
     @Autowired
     Environment env;
+
+    @Autowired
+    private SMSRedisService smsRedisService;
+
+
 
     @Value("${appkey}")
     private String key;
@@ -63,9 +69,8 @@ public class ApiController {
         @RequestParam(required = true) String longi) throws IOException {
         try{
             SmsImageAPI sms = new SmsImageAPI();
-            SHA256 sha256 = new SHA256();
-
             BufferedImage bi = sms.getPickup(lati, longi, key);
+            
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(bi, "png", baos);
             return baos.toByteArray();
