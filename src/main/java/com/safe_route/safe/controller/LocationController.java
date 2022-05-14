@@ -32,12 +32,14 @@ import com.safe_route.safe.dto.TmapTrafficDTO;
 import com.safe_route.safe.dto.TrafficDTO;
 import com.safe_route.safe.dto.ResponseDTO;
 import com.safe_route.safe.dto.WZoneDTO;
+import com.safe_route.safe.dto.SZoneDTO;
 import com.safe_route.safe.dto.AStar;
 import com.safe_route.safe.model.SafePointModel;
 import com.safe_route.safe.model.SafePosModel;
 import com.safe_route.safe.model.TmapTrafficModel;
 import com.safe_route.safe.model.TrafficModel;
 import com.safe_route.safe.model.WZoneModel;
+import com.safe_route.safe.model.SZoneModel;
 import com.safe_route.safe.service.LocationService;
 import com.safe_route.safe.api.Routing;
 
@@ -61,9 +63,10 @@ public class LocationController {
     private static Double nlStdDen = 0.138; //유흥업소 밀도 기준
 
     /* 범죄율 부(-) 가중치 */
-    private static Double[] nodeSafety = { }; //CCTV, 경찰관서, 교통량, 보안등, 편의점 
-    private static Double apt = 1.0; //아파트 단지
-    private static Double schoolW = 1.0; //학교
+    private static Double[] nodeSafety = {0.25, 1.0, 0.7, 0.20, 0.25}; //CCTV, 경찰관서, 보안등, 편의점 
+    private static Double apt = 0.2801; //아파트 단지
+    private static Double house = 0.6875; //단독주택
+    private static Double aptPreHouse = 0.4; //단독주택 대비 아파트단지 범죄 비율 
 
     /* AStar 경유지 탐색을 위한 집합 */
     private LinkedHashSet<AStar> open;
@@ -107,7 +110,7 @@ public class LocationController {
                                                         build();
             return ResponseEntity.ok().body(response);  
         }catch(Exception e){
-            return ResponseEntity.ok().body("Invalid Data");
+            return ResponseEntity.badRequest().body("Invalid Data");
         }
     }
 
@@ -261,7 +264,6 @@ public class LocationController {
                     /* AStar 알고리즘 작업 */
                     for(int i2 = 0 ; i2 < list.size() ; i2++){
                         AStar tmpNode = setAStarNode(list.get(i2), destLati, destLongi, aStarLayer);
-
                         open.add(tmpNode);
                     }
 
@@ -276,7 +278,6 @@ public class LocationController {
                         if(lastNodeDist < 50 && lastNodeDist >= 0){
                             continue;
                         }
-            
 
                         if(toClosedCandidate.getLayer() == aStarLayer && toClosedCandidate.getFScore() < toClosedFScore){
                             toClosed = toClosedCandidate;
@@ -312,7 +313,6 @@ public class LocationController {
             safePoints.add(SafePointDTO.toEntity(-1,rr,0.0,0.0));
             /* 반환 형태로 변환 */ 
             List<SafePointDTO> dtos = safePoints.stream().map(SafePointDTO::new).collect(Collectors.toList());
-
             ResponseDTO<SafePointDTO> response = ResponseDTO.<SafePointDTO>builder().
                                                         total(safePoints.size()).
                                                         data(dtos).
@@ -322,7 +322,7 @@ public class LocationController {
         }
         catch(Exception e){
             e.printStackTrace();
-            return ResponseEntity.ok().body("Invalid Data");
+            return ResponseEntity.badRequest().body("Invalid Data");
         }
     }
 
@@ -341,7 +341,7 @@ public class LocationController {
         return r * c;
     } 
 
-    /* 유효 노드 판정 */
+    /* 유효 범위 노드 판정 */
     private boolean isValid(Double lati, Double longi, Double sLati, Double sLongti, Double bLati, Double bLongti){
 
         if (lati >= sLati && lati <= bLati && longi >= sLongti && longi <= bLongti){
@@ -437,13 +437,17 @@ public class LocationController {
 
     private Double calcSScore(int roadType, int nodeType, Double lati, Double longi){
         try{
-
-            Double safetyRate = 1.0;
             List<WZoneModel> wZones = service.findWZone(lati - geoBound , longi - geoBound, lati + geoBound, longi + geoBound);
+            List<SZoneModel> sZones = service.findSZone(lati - geoBound , longi - geoBound, lati + geoBound, longi + geoBound);
             Double wZoneDensity = wZones.stream().mapToDouble(WZoneModel::getArea).sum() / 40000;
             Double wZoneSafety = (wZoneDensity > 1) ?  1 / nlStdDen : wZoneDensity / nlStdDen;
+            int sZonesCount = (sZones.size() > 4) ? 2 : sZones.size();
+            Double aptScore = (0.4 + sZonesCount * 0.2) / 5;
 
-            return roadSafety[roadType-1] + (wZoneSafety * nlZone);
+            Double safetyRate = roadSafety[roadType-1] * (1.0 - nodeSafety[nodeType-1]) + (wZoneSafety * nlZone) - aptScore;
+            System.out.println("total : " + safetyRate + " | rs : " + roadSafety[roadType-1] + " | ns : " + (1.0 - nodeSafety[nodeType-1]) +" | wz : " + (wZoneSafety * nlZone) + " | sz : " + aptScore);
+
+            return safetyRate * 1.0;
         }
         catch(Exception e){
             return roadSafety[2];

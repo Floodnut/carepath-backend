@@ -9,10 +9,12 @@ import com.safe_route.safe.persistence.TmapTrafficRepository;
 import com.safe_route.safe.persistence.TrafficRepository;
 import com.safe_route.safe.persistence.SafePersistence;
 import com.safe_route.safe.persistence.WZoneRepository;
+import com.safe_route.safe.persistence.SZoneRepository;
 import com.safe_route.safe.model.TmapTrafficModel;
 import com.safe_route.safe.model.TrafficModel;
 import com.safe_route.safe.model.SafePosModel;
 import com.safe_route.safe.model.WZoneModel;
+import com.safe_route.safe.model.SZoneModel;
 
 @Service
 public class LocationService {
@@ -31,6 +33,9 @@ public class LocationService {
 
     @Autowired
     private WZoneRepository wZone;
+
+    @Autowired
+    private SZoneRepository sZone;
 
     /* 좌표 근처 교통정보 */
     public List<TrafficModel> findTrafficPos(Double lati, Double longi){
@@ -107,8 +112,13 @@ public class LocationService {
         }
     }
 
-    /* 유흥 주점 */
+    /* 위험 노드 */
     public List<WZoneModel> findWZone(Double lati, Double longi, Double lati2, Double longi2){
         return wZone.findAllWZone(lati, longi, lati2, longi2);
+    }
+
+    /* 안전 노드 */
+    public List<SZoneModel> findSZone(Double lati, Double longi, Double lati2, Double longi2){
+        return sZone.findAllSZone(lati, longi, lati2, longi2);
     }
 }
