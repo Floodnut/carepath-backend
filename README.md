@@ -11,7 +11,6 @@
    <td align="center">용도</td>
    <td align="center">형태</td>
    <td align="center">URL</td>
-   <td align="center">비고</td>
   </tr>
   <tr>
    <td align="center">T-Map API</a></td>
@@ -62,21 +61,18 @@
    <td align="center">역할</td>
    <td align="center">개발환경</td>
    <td align="center">사용 기술</td>
-   <td align="center">비고</td>
   </tr>
   <tr>
    <td align="center"> <a href="https://github.com/nsih"> 남시현 </a></td>
    <td align="center"><a> 사용자 애플리케이션 개발 </a></td>
    <td align="center"><a>Windows 10, Android Studio</a></td>
    <td align="center"><a>JAVA, Android</a></td>
-   <td align="center"><a></a></td>
   </tr>
     <tr>
    <td align="center"> <a href="https://github.com/Floodnut">정금종 </a></td>
    <td align="center"><a> API 서버 개발 </a></td>
    <td align="center"><a>MacOS BigSur, Ubuntu, VSCode</a></td>
    <td align="center"><a>JAVA, Spring Boot, NodeJS, K3S, MYSQL, Docker</a></td>
-   <td align="center"><a></a></td>
   </tr>
  </table>
 
@@ -93,5 +89,8 @@
 - MySQL
 - K3S
 
-## 버그 제보
+## 4. 참고 자료
+- [참고자료]()
+
+## 5. 버그 제보
 버그 제보는 이슈를 통해 부탁드립니다.
