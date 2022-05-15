@@ -30,7 +30,7 @@ public class Routing {
             else if (safeDegree == 1){ /* safeDegree 1 */
                 zm = "15";
                 op = "4";
-                conge = "3";
+                conge = "2";
             }
             else{ /* safeDegree 2 */
                 zm = "15";

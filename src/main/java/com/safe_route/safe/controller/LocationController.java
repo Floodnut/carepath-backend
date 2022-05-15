@@ -445,7 +445,7 @@ public class LocationController {
             Double aptScore = (0.4 + sZonesCount * 0.2) / 5;
 
             Double safetyRate = roadSafety[roadType-1] * (1.0 - nodeSafety[nodeType-1]) + (wZoneSafety * nlZone) - aptScore;
-            System.out.println("total : " + safetyRate + " | rs : " + roadSafety[roadType-1] + " | ns : " + (1.0 - nodeSafety[nodeType-1]) +" | wz : " + (wZoneSafety * nlZone) + " | sz : " + aptScore);
+            //System.out.println("total : " + safetyRate + " | rs : " + roadSafety[roadType-1] + " | ns : " + (1.0 - nodeSafety[nodeType-1]) +" | wz : " + (wZoneSafety * nlZone) + " | sz : " + aptScore);
 
             return safetyRate * 1.0;
         }
