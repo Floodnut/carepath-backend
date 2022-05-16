@@ -1,10 +1,11 @@
 package com.safe_route.safe.service;
 
 import org.springframework.stereotype.Service;
-import java.awt.image.BufferedImage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
-import org.springframework.data.redis.core.RedisTemplate;
+import java.awt.Image;
+
+import com.safe_route.safe.model.SMSImage;
 
 @Service
 public class SMSRedisService {
@@ -12,10 +13,9 @@ public class SMSRedisService {
     @Autowired
     private RedisTemplate redisTemplate;
 
-    public void setRedisImage(String lati, String longi, BufferedImage image){
-        String key = lati.substring(0, 9) + longi.substring(0, 10);
+    public void setRedisImage(SMSImage image){
 
         SetOperations<String, Object> value = redisTemplate.opsForSet();
-        value.add(key, image);
+        value.add(image.getKey(), image.getCachedimage());
     }
 }

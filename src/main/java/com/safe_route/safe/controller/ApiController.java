@@ -10,7 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.core.env.Environment;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.beans.factory.annotation.Value;
-
+import org.springframework.core.GenericTypeResolver;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;  
 import org.json.simple.parser.JSONParser; 
@@ -18,6 +18,7 @@ import org.json.simple.parser.ParseException;
 
 import org.apache.commons.io.IOUtils;
 
+import java.security.NoSuchAlgorithmException;
 import java.net.MalformedURLException;
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,14 +26,19 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.awt.image.BufferedImage;
 import java.awt.Image;
+import java.util.Optional;
+import java.util.NoSuchElementException;
 import javax.imageio.ImageIO;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.*;
 
 import com.safe_route.safe.api.OSRMRequest;
 import com.safe_route.safe.api.SmsImageAPI;
+import com.safe_route.safe.model.SMSImage;
 import com.safe_route.safe.middleware.SHA256;
 import com.safe_route.safe.service.SMSRedisService;
+import com.safe_route.safe.persistence.SMSImageRedisRepository;
 
 
 @RestController
@@ -46,10 +52,13 @@ public class ApiController {
     @Autowired
     private SMSRedisService smsRedisService;
 
-
+    @Autowired
+    private SMSImageRedisRepository smsRedisRepo;
 
     @Value("${appkey}")
-    private String key;
+    private String appkey;
+
+    private SHA256 hashing = new SHA256();
     
     /* API Test */
     @GetMapping("api/")
@@ -66,17 +75,53 @@ public class ApiController {
     @GetMapping(value = "/sms", produces = MediaType.IMAGE_PNG_VALUE)
     public @ResponseBody byte[] getPickUpLocation(
         @RequestParam(required = true) String lati, 
-        @RequestParam(required = true) String longi) throws IOException {
+        @RequestParam(required = true) String longi) throws IOException, NoSuchAlgorithmException {
         try{
-            SmsImageAPI sms = new SmsImageAPI();
-            BufferedImage bi = sms.getPickup(lati, longi, key);
             
+            String key = hashing.encrypt(lati + longi);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(bi, "png", baos);
-            return baos.toByteArray();
+            
+            /* Redis Retrieve */
+            Optional<SMSImage> opt = smsRedisRepo.findById(key);
+            SMSImage cachedImage = opt.get();
 
-        }catch(Exception e){
-            //e.printStackTrace();
+            return cachedImage.getCachedimage();
+        }catch(NullPointerException ne){
+            String key = hashing.encrypt(lati + longi);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            SmsImageAPI sms = new SmsImageAPI();
+            BufferedImage bi = sms.getPickup(lati, longi, appkey);
+            Image image = bi;
+            ImageIO.write(bi, "png", baos);
+
+            /* Redis Caching */
+            SMSImage cache = new SMSImage(key,  baos.toByteArray());
+            smsRedisRepo.save(cache);
+
+            /* Redis Value Return */
+            return baos.toByteArray();
+        }catch(NoSuchElementException ee){
+            
+            String key = hashing.encrypt(lati + longi);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            SmsImageAPI sms = new SmsImageAPI();
+            BufferedImage bi = sms.getPickup(lati, longi, appkey);
+            Image image = bi;
+            ImageIO.write(bi, "png", baos);
+
+            /* Redis Caching */
+            SMSImage cache = new SMSImage(key,  baos.toByteArray());
+            smsRedisRepo.save(cache);
+
+            /* Redis Value Return */
+            return baos.toByteArray();
+        }
+        catch(NoSuchAlgorithmException ae){
+            ae.printStackTrace();
+            return null;
+        }
+        catch(Exception e){
+            e.printStackTrace();
             return null;
         }
     }

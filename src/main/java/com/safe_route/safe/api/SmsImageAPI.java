@@ -20,10 +20,10 @@ import org.springframework.stereotype.Service;
 
 public class SmsImageAPI {
 
-    public BufferedImage getPickup(String lati, String longi, String key) {
+    public BufferedImage getPickup(String lati, String longi, String _key) {
         try{
             String URL = "https://apis.openapi.sk.com/tmap/staticMap?";
-            String appKey = "appKey=" + key;
+            String appKey = "appKey=" + _key;
             String param = "&longitude="+ longi + "&latitude=" + lati + "&coordType=WGS84GEO&zoom=15&markers=" + longi + "," + lati + "&format=PNG&width=512&height=512";
 
             URL url = new URL(URL+ appKey + param);
