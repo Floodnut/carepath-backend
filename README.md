@@ -72,22 +72,20 @@
    <td align="center"> <a href="https://github.com/Floodnut">정금종 </a></td>
    <td align="center"><a> API 서버 개발 </a></td>
    <td align="center"><a>MacOS BigSur, Ubuntu, VSCode</a></td>
-   <td align="center"><a>JAVA, Spring Boot, NodeJS, K3S, MYSQL, Docker</a></td>
+   <td align="center"><a>JAVA, Spring Boot, NodeJS, K3S, MYSQL, Docker, Redis</a></td>
   </tr>
  </table>
 
 ## 3. 구동 환경
 ### 사용자 애플리케이션
-- [Android](https://github.com/nsih/Find_Path_Application)
+- JAVA, [Android](https://github.com/nsih/Find_Path_Application)
 ### API 서버
-- JAVA
-- Spring Boot
+- JAVA + Spring Boot
 ### 보행자경로/교통정보 요청 서버
-- [NodeJS-Express](https://github.com/Floodnut/nodejs-server-1)
-- Docker
+- Docker, [NodeJS-Express](https://github.com/Floodnut/nodejs-server-1)
 ### DataBase
-- MySQL
-- K3S
+- K3S, MySQL
+- Docker, Redis
 
 ## 4. 참고 자료
 - [참고자료]()
