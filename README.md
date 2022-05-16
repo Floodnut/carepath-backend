@@ -80,7 +80,7 @@
 ### 사용자 애플리케이션
 - JAVA, [Android](https://github.com/nsih/Find_Path_Application)
 ### API 서버
-- JAVA + Spring Boot
+- JAVA, Spring Boot
 ### 보행자경로/교통정보 요청 서버
 - Docker, [NodeJS-Express](https://github.com/Floodnut/nodejs-server-1)
 ### DataBase
