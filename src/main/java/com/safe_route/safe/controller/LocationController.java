@@ -54,7 +54,7 @@ public class LocationController {
 
     /* 도로 폭에 따른 안전도 가중치 */
     private static Double geoBound = 0.002;
-    private static Double bound = 0.01414;
+    private static Double bound = 0.001;
     private static Double safeScale = 1.0;
     private static Double[] roadSafety = {0.3882, 0.9071, 1.0}; //avenue, road, narrow 
 
@@ -63,18 +63,18 @@ public class LocationController {
     private static Double nlStdDen = 0.138; //유흥업소 밀도 기준
 
     /* 범죄율 부(-) 가중치 */
-    private static Double[] nodeSafety = {0.25, 1.0, 0.7, 0.20, 0.25}; //CCTV, 경찰관서, 보안등, 편의점 
+    private static Double[] nodeSafety = {0.25, 1.0, 0.4, 0.20, 0.25}; //CCTV, 경찰관서, 보안등, 편의점 
     private static Double apt = 0.2801; //아파트 단지
     private static Double house = 0.6875; //단독주택
     private static Double aptPreHouse = 0.4; //단독주택 대비 아파트단지 범죄 비율 
 
-    /* AStar 경유지 탐색을 위한 집합 */
-    private LinkedHashSet<AStar> open;
-    private LinkedHashSet<AStar> closed;
+    // /* AStar 경유지 탐색을 위한 집합 */
+    // private LinkedHashSet<AStar> open;
+    // private LinkedHashSet<AStar> closed;
 
-    private AStar srcNode;    
-    private AStar dstNode; 
-    private int   nodeId;
+    // private AStar srcNode;    
+    // private AStar dstNode; 
+    // private int   nodeId;
 
     /* 안전 노드 조회 */
     @GetMapping("/node")
@@ -136,6 +136,34 @@ public class LocationController {
             AStar toClosed = new AStar();
             Double toClosedFScore = Double.POSITIVE_INFINITY;
 
+
+            /* AStar 경유지 탐색을 위한 집합 */
+            LinkedHashSet<AStar> open = new LinkedHashSet<AStar>();
+            LinkedHashSet<AStar> closed = new LinkedHashSet<AStar>();
+
+            AStar srcNode = new AStar(); 
+            AStar dstNode = new AStar(); 
+            int   nodeId = 1;
+
+            /* 출발지 노드 초기화 */
+            srcNode.setId(0);
+            srcNode.setLayer(0);
+            srcNode.setLati(sourceLati);
+            srcNode.setLongi(sourceLongi);
+            srcNode.setGScore();
+            srcNode.setHScore(getDistance(sourceLati, sourceLongi, destLati, destLongi));
+            srcNode.setSScore();
+            srcNode.setFScore();
+            closed.add(srcNode);
+            
+            /* 목적지 노드 초기화 */
+            dstNode.setLati(destLati);
+            dstNode.setLongi(destLongi);
+            dstNode.setHScore();
+            dstNode.setSScore();  
+
+
+
             /*   테스트   */
             String rr = "_";
             LOG.setLevel(Level.INFO);
@@ -164,7 +192,7 @@ public class LocationController {
 
             /* 안전 노드 확인 */
             LinkedList<AStar> wayPointsList = new LinkedList<AStar>();
-            initAStar(sourceLati, sourceLongi, destLati, destLongi);
+            //initAStar(sourceLati, sourceLongi, destLati, destLongi);
             wayPointsList.add(srcNode);
 
             LinkedHashSet<SafePosModel> wayPoints = new LinkedHashSet<SafePosModel>();
@@ -249,6 +277,7 @@ public class LocationController {
                 if(safes.size() > 0){
                     for(int j = 0 ; j < safes.size() ; j++){
                         SafePosModel tmp = safes.get(j);
+
                         if(boundaryEquation(tmp.getLati(), tmp.getLongi(), lati_1, longi_1, lati, longi)){
                             wayPoints.add(tmp);
                         } 
@@ -263,7 +292,8 @@ public class LocationController {
 
                     /* AStar 알고리즘 작업 */
                     for(int i2 = 0 ; i2 < list.size() ; i2++){
-                        AStar tmpNode = setAStarNode(list.get(i2), destLati, destLongi, aStarLayer);
+                        AStar tmpNode = setAStarNode(list.get(i2), destLati, destLongi, aStarLayer, closed);
+                        nodeId += 1;
                         open.add(tmpNode);
                     }
 
@@ -375,34 +405,8 @@ public class LocationController {
         return false;
     }
 
-    /* AStar 초기화 */
-    private void initAStar(Double srcLati, Double srcLongi, Double dstLati, Double dstLongi){
-        this.open = new LinkedHashSet<AStar>();
-        this.closed = new LinkedHashSet<AStar>();
-        this.srcNode = new AStar();
-        this.dstNode = new AStar();
-
-        /* 출발지 노드 초기화 */
-        srcNode.setId(0);
-        srcNode.setLayer(0);
-        srcNode.setLati(srcLati);
-        srcNode.setLongi(srcLongi);
-        srcNode.setGScore();
-        srcNode.setHScore(getDistance(srcLati, srcLongi, dstLati, dstLongi));
-        srcNode.setSScore();
-        srcNode.setFScore();
-        this.nodeId = 1;
-        closed.add(srcNode);
-        
-        /* 목적지 노드 초기화 */
-        dstNode.setLati(dstLati);
-        dstNode.setLongi(dstLongi);
-        dstNode.setHScore();
-        dstNode.setSScore();  
-    }
-
     /* AStar 노드 추가 및 연결 */
-    private AStar setAStarNode(SafePosModel node, Double dstLati, Double dstLongi, int layer){
+    private AStar setAStarNode(SafePosModel node, Double dstLati, Double dstLongi, int layer, LinkedHashSet<AStar> closed){
         AStar tmpNode = new AStar();
         int validParent = 0;
 
@@ -429,8 +433,6 @@ public class LocationController {
         tmpNode.setHScore(getDistance(node.getLati(), node.getLongi(), dstLati, dstLongi));
         tmpNode.setSScore(calcSScore(node.getRoadtype(), node.getType(), node.getLati(), node.getLongi()));
         tmpNode.setFScore();
-        
-        this.nodeId += 1;
 
         return tmpNode;
     }
@@ -441,10 +443,10 @@ public class LocationController {
             List<SZoneModel> sZones = service.findSZone(lati - geoBound , longi - geoBound, lati + geoBound, longi + geoBound);
             Double wZoneDensity = wZones.stream().mapToDouble(WZoneModel::getArea).sum() / 40000;
             Double wZoneSafety = (wZoneDensity > 1) ?  1 / nlStdDen : wZoneDensity / nlStdDen;
-            int sZonesCount = (sZones.size() > 4) ? 2 : sZones.size();
-            Double aptScore = (0.4 + sZonesCount * 0.2) / 5;
+            int sZonesCount = (sZones.size() > 0) ? 1 : 0;
+            Double aptScore = (0.4 * sZonesCount) / 5;
 
-            Double safetyRate = roadSafety[roadType-1] * (1.0 - nodeSafety[nodeType-1]) + (wZoneSafety * nlZone) - aptScore;
+            Double safetyRate = roadSafety[roadType-1] + (1.1 - nodeSafety[nodeType-1]) + (wZoneSafety * nlZone) - aptScore;
             //System.out.println("total : " + safetyRate + " | rs : " + roadSafety[roadType-1] + " | ns : " + (1.0 - nodeSafety[nodeType-1]) +" | wz : " + (wZoneSafety * nlZone) + " | sz : " + aptScore);
 
             return safetyRate * 1.0;
@@ -452,5 +454,12 @@ public class LocationController {
         catch(Exception e){
             return roadSafety[2];
         }
+    }
+
+    private boolean checkValid(Double dist){
+        if (dist < 100){
+            return false;
+        }
+        return true;
     }
 }

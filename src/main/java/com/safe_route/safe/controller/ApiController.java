@@ -80,7 +80,7 @@ public class ApiController {
             
             String key = hashing.encrypt(lati + longi);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            
+
             /* Redis Retrieve */
             Optional<SMSImage> opt = smsRedisRepo.findById(key);
             SMSImage cachedImage = opt.get();
@@ -117,11 +117,11 @@ public class ApiController {
             return baos.toByteArray();
         }
         catch(NoSuchAlgorithmException ae){
-            ae.printStackTrace();
+            //ae.printStackTrace();
             return null;
         }
         catch(Exception e){
-            e.printStackTrace();
+            //e.printStackTrace();
             return null;
         }
     }

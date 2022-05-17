@@ -24,7 +24,7 @@ public class Routing {
             String conge = new String();
             if (safeDegree == 0){ /* safeDegree 0 */
                 zm = "15";
-                op = "10";
+                op = "30";
                 conge = "3";
             }
             else if (safeDegree == 1){ /* safeDegree 1 */

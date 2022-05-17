@@ -1,0 +1,24 @@
+= Carepath API Docs
+:toc: left
+:toclevels: 2
+:sectlinks:
+
+[[resources-get]]
+== 보행자 경로 찾기
+
+[[resources-pathfinder-get]]
+=== GET
+
+==== HTTP request
+
+include::{snippets}/pathfinder-get/http-request.adoc[]
+
+==== HTTP request Parameter
+
+include::{snippets}/pathfinder-get/request-parameters.adoc[]
+
+==== HTTP response Parameter
+
+include::{snippets}/pathfinder-get/response-fields.adoc[]
+
+

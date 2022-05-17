@@ -89,7 +89,7 @@ public class LocationService {
 
     /* 좌표 근처 안전 노드 */
     public List<SafePosModel> findSafePos(Double lati, Double longi, int interval){
-        Double w = 0.005;
+        Double w = 0.0025;
         return safePersistence.findSafePosByLatiGreaterThanAndLongtiGreaterThanAndLatiLessThanAndLongtiLessThan(lati - w, longi - w, lati + w, longi + w);
     }
 

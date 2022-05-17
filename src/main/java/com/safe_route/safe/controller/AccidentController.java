@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public class AccidentController {
             @RequestParam(required = true) String srcLongi,
             @RequestParam(required = false) String dstLati,
             @RequestParam(required = false) String dstLongi
-        ){
+        ) {
             try{
                 Double lati = Double.parseDouble(srcLati);
                 Double longi = Double.parseDouble(srcLongi);
@@ -43,7 +44,7 @@ public class AccidentController {
     
                 /* 현재 위치 기준 */   
                 if(mode == 1){              
-                    zones = service.findAccident(lati - 0.03, longi - 0.03, lati + 0.03, longi + 0.03);
+                    zones = service.findAccident(lati - 0.005, longi - 0.005, lati + 0.005, longi + 0.0005);
                 }
                 /* 지정한 범위 기준 */   
                 else if(mode == 2){
