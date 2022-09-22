@@ -196,7 +196,7 @@ public class LocationController {
             wayPointsList.add(srcNode);
 
             LinkedHashSet<SafePosModel> wayPoints = new LinkedHashSet<SafePosModel>();
-            for (int i = 1 ; i < jarr.size() - 1; i++){
+            for (int i = 1 ; i < jarr.size(); i++){
                 long vLimit = (long)vNodeList.get(vPointer);
                 Double lati = 0.0;
                 Double longi = 0.0;

@@ -60,16 +60,8 @@ public class ApiController {
 
     private SHA256 hashing = new SHA256();
     
-    /* API Test */
-    @GetMapping("api/")
-    public String apiTest() {
-        try{
-            return "This is api page";
-        }
-        catch(Exception e){
-            return "Invalid data";
-        }
-    }
+
+
 
     /* 마중요청 문자 보내기 */
     @GetMapping(value = "/sms", produces = MediaType.IMAGE_PNG_VALUE)
