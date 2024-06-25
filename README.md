@@ -81,11 +81,12 @@
 - JAVA, [Android](https://github.com/nsih/Find_Path_Application)
 ### API 서버
 - JAVA, Spring Boot
-### 보행자경로/교통정보 요청 서버
-- Docker, [NodeJS-Express](https://github.com/Floodnut/nodejs-server-1)
+- [NodeJS-Express](https://github.com/Floodnut/nodejs-server-1)
 ### DataBase
-- K3S, MySQL
-- Docker, Redis
+- MySQL, Redis
+
+### Container
+- Docker, Kubernetes(K3S)
 
 ## 4. 참고 자료
 - [참고자료]()
